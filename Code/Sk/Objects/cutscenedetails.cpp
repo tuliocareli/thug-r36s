@@ -10,6 +10,9 @@
 *****************************************************************************/
 
 #include <sk/objects/cutscenedetails.h>
+#if defined(__PLAT_LINUX__) || defined(__PLAT_VITA__)
+#include <unistd.h>
+#endif
 
 #include <core/allmath.h>
 
@@ -68,6 +71,9 @@
 /*****************************************************************************
 **								  Externals									**
 *****************************************************************************/
+#ifdef __PLAT_VITA__
+namespace Nx { void VitaLibererDifferes( void ); }
+#endif
 
 /*****************************************************************************
 **								   Defines									**
@@ -3458,6 +3464,7 @@ bool CCutsceneData::PostLoad( bool assertOnFail )
 	// to go before the video starts...
 
 #ifndef __PLAT_NGC__
+	int audio_wait_ms = 0;
 	while ( !m_audioStarted )
 	{
 		Pcm::Update();
@@ -3472,6 +3479,14 @@ bool CCutsceneData::PostLoad( bool assertOnFail )
 		}
 
 		Tmr::VSync();
+#if defined(__PLAT_LINUX__) || defined(__PLAT_VITA__)
+		usleep( 1000 );
+		if ( ++audio_wait_ms > 2000 )
+		{
+			m_audioStarted = true;
+			break;
+		}
+#endif
 	}
 #endif		// __PLAT_NGC__
 	//-------------------------------------------------------------
@@ -4395,7 +4410,7 @@ void CCutsceneData::update_video_playback( Gfx::Camera* pCamera, Script::CStruct
 		for ( int i = 0; i < SIO::vMAX_DEVICES; i++ )
 		{
 			Inp::Handler< Mdl::FrontEnd >* pHandler = pFront->GetInputHandler( i );
-			if ( pHandler->m_Device->IsPluggedIn() && pHandler->m_Device->HasValidControlData() && pHandler->m_Input->m_Makes & Inp::Data::mD_X )
+			if ( pHandler->m_Device->IsPluggedIn() && pHandler->m_Device->HasValidControlData() && ( pHandler->m_Input->m_Makes & ( Inp::Data::mD_X | Inp::Data::mD_START | Inp::Data::mD_TRIANGLE ) ) )
 			{
 				// GJ FIX FOR TT12703:  "If the player disconnects the 
 				// controller during any cut scene in the game, the player
@@ -5210,6 +5225,11 @@ void CCutsceneDetails::Cleanup()
 	g_in_cutscene = false;
 #endif		// __PLAT_NGC__
 
+#ifdef __PLAT_VITA__
+	Pcm::StopMusic();
+	Pcm::StopStreams();
+#endif
+
 	// kill the cutscene panel, if it exists
 	Script::RunScript( CRCD(0xe7bc7efd,"kill_cutscene_panel") );
 
@@ -5238,6 +5258,10 @@ void CCutsceneDetails::Cleanup()
 	// aborted while they were still taking effect during the cutscene
 	// (in which case the fake lights would have gone on the cutscene heap)
 	Nx::CLightManager::sClearCurrentFakeLightsCommand();
+
+#ifdef __PLAT_VITA__
+	Nx::VitaLibererDifferes();
+#endif
 
 	// destroy the cutscene heap (at this point, any allocations made during 
 	// the cutscene should have been freed up)
@@ -5311,7 +5335,12 @@ bool CCutsceneDetails::ResetCustomKeys()
 
 bool CCutsceneDetails::IsComplete()
 {
-	if ( m_aborted )
+	if ( m_aborted || ( mp_cutsceneAsset && mp_cutsceneAsset->IsAborted() ) )
+	{
+		return true;
+	}
+
+	if ( mp_cutsceneAsset && mp_cutsceneAsset->LoadFinished() && mp_cutsceneAsset->IsAnimComplete() )
 	{
 		return true;
 	}
@@ -5321,11 +5350,6 @@ bool CCutsceneDetails::IsComplete()
 		return false;
 	}
 
-	if ( mp_cutsceneAsset )
-	{
-		return mp_cutsceneAsset->LoadFinished() && mp_cutsceneAsset->IsAnimComplete();
-	}
-		
 	return false;
 }
 	

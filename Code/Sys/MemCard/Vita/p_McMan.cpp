@@ -42,7 +42,11 @@ namespace Mc
 
 // Racine des sauvegardes. Volontairement distincte du dossier des assets :
 // une reinstallation du jeu ne doit pas emporter les parties.
+#ifdef __PLAT_LINUX__
+static const char *RACINE = "save";
+#else
 static const char *RACINE = "ux0:data/thug/save";
+#endif
 
 // Tampon de construction de chemin. Une seule operation disque a la fois sur
 // ce chemin : le moteur sauvegarde depuis le thread principal.
@@ -78,7 +82,9 @@ static const char *chemin_de( const char *p_nom )
 // dossier n'existe pas a la premiere partie, et sceIoOpen ne le cree pas.
 static void assure_racine( void )
 {
+	#ifndef __PLAT_LINUX__
 	sceIoMkdir( "ux0:data/thug", 0777 );
+#endif
 	sceIoMkdir( RACINE, 0777 );
 }
 
@@ -86,12 +92,12 @@ static void assure_racine( void )
 // APLATIT un nom de sauvegarde en un nom de dossier unique.
 //
 // Le moteur fabrique des noms qui CONTIENNENT un separateur, par exemple
-// « Custom Skater-Story/Skater » (mcfuncs.cpp, s_generate_xbox_directory_name
-// : sprintf « %s-Story/Skater »). Sur Xbox ce n'est pas un chemin : le
+//  Custom Skater-Story/Skater  (mcfuncs.cpp, s_generate_xbox_directory_name
+// : sprintf  %s-Story/Skater ). Sur Xbox ce n'est pas un chemin : le
 // systeme cree une sauvegarde et ConvertDirectory rend le vrai nom de
 // dossier, plat.
 //
-// [REFUTE] « on peut prendre ce nom tel quel comme chemin ». Cela creait
+// [REFUTE]  on peut prendre ce nom tel quel comme chemin . Cela creait
 // save/Custom Skater-Story/Skater/... -- deux niveaux -- et GetFileList, qui
 // ne lit que le premier, ne voyait jamais la sauvegarde. Le jeu proposait
 // donc de charger, sans jamais appeler LoadFromMemoryCard.
@@ -115,7 +121,7 @@ static const char *aplatit( const char *p_nom )
 // Cree TOUS les niveaux d'un chemin, pas seulement le dernier.
 //
 // [VERIFIE] indispensable : le moteur demande des noms a plusieurs niveaux,
-// par exemple « Custom Skater-Story/Skater » (le nom vient de
+// par exemple  Custom Skater-Story/Skater  (le nom vient de
 // s_generate_xbox_directory_name). sceIoMkdir ne cree pas les parents et
 // echouait avec 0x80010002 (ENOENT), ce qui faisait echouer toute la
 // sauvegarde -- constate dans le journal avant correction.
@@ -125,7 +131,7 @@ static void cree_arborescence( const char *p_chemin )
 	strncpy( tampon, p_chemin, sizeof( tampon ) - 1 );
 	tampon[sizeof( tampon ) - 1] = '\0';
 
-	// On demarre apres « ux0: » pour ne pas tenter de creer le peripherique.
+	// On demarre apres  ux0:  pour ne pas tenter de creer le peripherique.
 	char *p = strchr( tampon, ':' );
 	p = p ? ( p + 1 ) : tampon;
 
@@ -234,7 +240,7 @@ const char *Card::ConvertDirectory( const char *dir_name )
 	assure_racine();
 
 	// Rend le nom APLATI : c'est celui que le moteur reutilisera pour
-	// construire le chemin du fichier (« /<dossier>/<dossier> »), et celui
+	// construire le chemin du fichier ( /<dossier>/<dossier> ), et celui
 	// que GetFileList lui rendra.
 	strncpy( sortie, aplatit( dir_name ), sizeof( sortie ) - 1 );
 	sortie[sizeof( sortie ) - 1] = '\0';
@@ -283,7 +289,7 @@ File *Card::Open( const char *filename, int mode, int size )
 		{
 			*p_slash = '\0';
 			// Arborescence complete : le chemin du fichier compte plusieurs
-			// niveaux (« <partie>/<sous-dossier>/<fichier> »).
+			// niveaux ( <partie>/<sous-dossier>/<fichier> ).
 			cree_arborescence( parent );
 		}
 	}

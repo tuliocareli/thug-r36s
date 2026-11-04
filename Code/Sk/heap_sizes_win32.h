@@ -24,11 +24,11 @@
 
 #else
 
-#ifdef	__NOPT_ASSERT__
-// K: On debug builds line number info is included in the qb's so add in another 500K for it.
-// On release builds the line number info is excluded by passing the nolinenumbers switch to
-// cleanass when it is called from easyburn.bat
-//#define	_SCRIPT_HEAP_SIZE					(3824000+500000+130000)
+#if defined(__PLAT_LINUX__) || defined(__PLAT_WN32__)
+// 64-bit AArch64 requires more memory per symbol/structure than 32-bit PS2.
+// R36S has 1GB RAM, allocating 16MB for script heap is safe and prevents OOM.
+#define	_SCRIPT_HEAP_SIZE					(16 * 1024 * 1024)
+#elif defined(__NOPT_ASSERT__)
 #define	_SCRIPT_HEAP_SIZE					(3824000+5000000+130000) // lwss: increase
 #else
 #define	_SCRIPT_HEAP_SIZE					(3824000+130000)	   

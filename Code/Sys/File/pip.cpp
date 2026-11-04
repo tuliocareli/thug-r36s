@@ -163,13 +163,13 @@ static SPreContained *sSkipToNextPreContained(SPreContained *p_preContained, EQu
 
 //	printf ("p_preContained = %p\n, total_data = %d, name = (%p) %s",p_preContained,total_data_size,p_preContained->mpName,p_preContained->mpName);
 	
-	uint32 p_next=(uint32)p_preContained->mpName;
-	p_next+=p_preContained->mNameSize;
+	uintptr_t p_next = (uintptr_t)p_preContained->mpName;
+	p_next += p_preContained->mNameSize;
 	if (quadWordAlignedData)
 	{
-		p_next=(p_next+15)&~15;
+		p_next = (p_next + 15) & ~15;
 	}
-	p_next+=total_data_size;
+	p_next += total_data_size;
 
 	return (SPreContained*)p_next;
 }
@@ -333,12 +333,16 @@ void LoadPre(const char *p_preFileName)
 	SPreContained *p_contained=(SPreContained*)(p_pre_header+1);
 	for (uint32 f=0; f<num_files; ++f)
 	{
+		if (f < 5) {
+			VLOG("PIP", "f=%u name=%s dataSize=%u compSize=%u nameSize=%u usage=%u",
+				f, p_contained->mpName, p_contained->mDataSize, p_contained->mCompressedSize, p_contained->mNameSize, p_contained->mUsage);
+		}
 		// Do a quick check to make sure that all the usage values are initially zero.
 		// They should be, because the namesize member should never be bigger than 65535 ...
 		Dbg_MsgAssert(p_contained->mUsage==0,("The file %s in %s has mUsage=%d ??",p_contained->mpName,p_preFileName,p_contained->mUsage));
 
-		new_pre_buffer_size+=(uint32)p_contained->mpName-(uint32)p_contained;
-		new_pre_buffer_size+=p_contained->mNameSize;
+		new_pre_buffer_size += (uint32)((uintptr_t)p_contained->mpName - (uintptr_t)p_contained);
+		new_pre_buffer_size += p_contained->mNameSize;
 
 		new_pre_buffer_size=(new_pre_buffer_size+15)&~15;
 
@@ -471,9 +475,9 @@ void LoadPre(const char *p_preFileName)
 		// cause the new data to overwrite the contents of p_source_contained.
 		SPreContained *p_next_source_contained=sSkipToNextPreContained(p_source_contained,NOT_QUAD_WORD_ALIGNED);
 
-		uint8 *p_source=(uint8*)(p_source_contained->mpName+p_source_contained->mNameSize);
-		uint8 *p_dest=(uint8*)(p_dest_contained->mpName+p_dest_contained->mNameSize);
-		p_dest=(uint8*)( ((uint32)p_dest+15)&~15 );
+		uint8 *p_source = (uint8*)(p_source_contained->mpName + p_source_contained->mNameSize);
+		uint8 *p_dest = (uint8*)(p_dest_contained->mpName + p_dest_contained->mNameSize);
+		p_dest = (uint8*)( ((uintptr_t)p_dest + 15) & ~15 );
 
 #ifdef __PLAT_VITA__
 		VLOG( "PIP", "    fichier %u : comprime=%u -> %u octets",
@@ -516,7 +520,7 @@ void LoadPre(const char *p_preFileName)
 	}
 
 	// I don't think I ever need to reference mSize again, but might as well make it correct.
-	p_dest_header->mSize=(uint32)p_dest_contained-(uint32)p_dest_header;
+	p_dest_header->mSize = (uint32)((uintptr_t)p_dest_contained - (uintptr_t)p_dest_header);
 
 	//printf("Wasted space = %d\n",new_pre_buffer_size-((uint32)p_dest_contained-(uint32)p_new_file_data));
 
@@ -533,11 +537,13 @@ void LoadPre(const char *p_preFileName)
 		for( const char *q = p_n; *q; ++q )
 			if(( q[0] == 'c' ) && ( q[1] == 'o' ) && ( q[2] == 'l' ) && ( q[3] == '.' ))
 				p_c = q;
+#if defined(__PLAT_VITA__) && !defined(__PLAT_LINUX__)
 		if( p_c )
 		{
 			VLOG( "PIP", "  (collision chargee -- trace des c-functions armee)" );
 			VitaSetCfuncTrace( true );
 		}
+#endif
 	}
 #endif
 	spp_pre_files[spare_index]=p_new_file_data;
@@ -675,8 +681,8 @@ void* Load(const char* p_fileName)
 
 		Dbg_MsgAssert(p_contained_file->mCompressedSize==0,("The file '%s' is stored compressed in %s !",p_fileName,sGetPreName(p_contained_file)));
 
-		uint32 p_data=(uint32)p_contained_file->mpName+p_contained_file->mNameSize;
-		p_data=(p_data+15)&~15;
+		uintptr_t p_data = (uintptr_t)p_contained_file->mpName + p_contained_file->mNameSize;
+		p_data = (p_data + 15) & ~15;
 		return (void*)p_data;
 	}
 

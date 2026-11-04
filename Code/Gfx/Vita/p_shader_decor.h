@@ -11,7 +11,7 @@
 // Etape 1 (ce fichier) : texture x couleur de sommet, test alpha optionnel --
 // exactement ce que fait aujourd'hui le pipeline fixe pour les lots du decor.
 // Aucun changement d'image attendu : c'est la condition pour comparer les
-// performances a image egale (drapeau « shd », voir plus bas).
+// performances a image egale (drapeau Â« shd Â», voir plus bas).
 
 #ifndef __GFX_VITA_P_SHADER_DECOR_H__
 #define __GFX_VITA_P_SHADER_DECOR_H__
@@ -21,7 +21,7 @@
 namespace NxVita
 {
 
-// « shd N » : 0 arret, 1 opaques et translucides, 2 opaques, 3 translucides,
+// Â« shd N Â» : 0 arret, 1 opaques et translucides, 2 opaques, 3 translucides,
 // 5 opaques peints en magenta (voir ce que le shader dessine, et ou).
 extern int g_vita_shader_decor;
 
@@ -84,14 +84,14 @@ bool ShaderMateriauPret();
 // Compile a l'avance la variante de ce materiau (au chargement du niveau).
 void ShaderMateriauPrecompiler( const SShaderMateriau *p );
 int  ShaderMateriauNombreVariantes();
-// Issue #69 : recherche des variantes par table de hachage (� vhs 0/1 �) au
+// Issue #69 : recherche des variantes par table de hachage (« vhs 0/1 ») au
 // lieu du parcours lineaire de s_var. Meme variante rendue dans les deux cas.
 extern bool g_vita_var_hash;
 // Compteurs cumules depuis le dernier appel, puis remis a zero : variantes en
 // table, recherches de variante, sondes (comparaisons de cle), et poses du
 // programme de sommets + tampon d'uniformes de sommets du chemin GXM direct.
 void ShaderMateriauStats( int *p_nb_var, int *p_recherches, int *p_sondes, int *p_poses_vs );
-// Issue #69 (� vpr 0/1 �) : programme de sommets partage entre variantes de
+// Issue #69 (« vpr 0/1 ») : programme de sommets partage entre variantes de
 // meme vertex shader, et reposes sautees quand il n'a pas change. Compteur
 // des reposes evitees depuis le dernier appel, puis remis a zero.
 extern bool g_vita_vpr;
@@ -103,9 +103,10 @@ void ShaderMateriauDebut( const float *mvp );
 // Faux : pas de variante (table pleine) -- l'appelant ne dessine pas.
 bool ShaderMateriauMaillage( const SShaderMateriau *p );
 void ShaderMateriauFin();
+void ShaderMateriauResetProgramme();
 
 // --- Chemin GXM direct des lots de decor (issue #18) ------------------------
-// Voir p_shader_decor.cpp. � gxd 0/1 �.
+// Voir p_shader_decor.cpp. « gxd 0/1 ».
 extern bool g_vita_gxm_direct;
 void GxmMateriauDebut( const float *mvp );
 // p_tex : descripteurs GXM des textures des passes (deja adresses). Rend false
@@ -130,12 +131,12 @@ bool GxmMateriauMaillage( const SShaderMateriau *p, SceGxmTexture *const *p_tex,
                           unsigned int ibo, int num_indices, int famille );
 // A appeler avant tout dessin vitaGL qui suit des dessins GXM directs.
 void GxmMateriauFin();
-// Listes de commandes GXM (contexte differe), � gcl 0/1 � : entre Debut et
+// Listes de commandes GXM (contexte differe), « gcl 0/1 » : entre Debut et
 // Fin, les dessins GXM sont enregistres, puis executes a la Fin.
 extern bool g_vita_listes_gxm;
 bool GxmListeDebut( void );
 void GxmListeFin( void );
-// Lots opaques sur un autre coeur (� lmd 0/1 �, issue #18) : entre
+// Lots opaques sur un autre coeur (« lmd 0/1 », issue #18) : entre
 // GxmTravDebut et GxmTravFin (thread principal), les lots precalcules passes a
 // GxmTravPousser sont enregistres par un travailleur dans une liste de
 // commandes, executee a GxmTravFin. Faux : dessiner soi-meme.

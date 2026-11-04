@@ -1,5 +1,51 @@
-@ GÉNÉRÉ par vita/tools/gen_link_stubs.py — ne pas éditer à la main.
-@ Voir l'en-tête du script : ces stubs ne loggent pas.
+#if defined(__aarch64__)
+	.text
+	.align 4
+
+#define STUB(sym) \
+	.global sym; \
+	.type sym, %function; \
+sym: \
+	mov x0, #0; \
+	fmov s0, wzr; \
+	ret; \
+	.size sym, .-sym
+
+STUB(_Z13MemViewTogglev)
+STUB(_ZN2Nx12plat_shatterEPNS_5CGeomE)
+STUB(_ZN2Nx18plat_texture_splatEPPNS_7CSectorEPPNS_11CCollStaticERN3Mth6VectorES8_ffPNS_8CTextureEPNS_26sSplatTrailInstanceDetailsE)
+STUB(_ZN2Nx19plat_shatter_renderEPNS_23sShatterInstanceDetailsE)
+STUB(_ZN2Nx19plat_shatter_updateEPNS_23sShatterInstanceDetailsEf)
+STUB(_ZN2Nx20plat_shatter_cleanupEv)
+STUB(_ZN2Nx23plat_shatter_initializeEv)
+STUB(_ZN2Nx24plat_screen_flash_renderEPNS_19sScreenFlashDetailsE)
+STUB(_ZN2Nx25plat_texture_splat_renderEv)
+STUB(_ZN2Nx26plat_texture_splat_cleanupEv)
+STUB(_ZN2Nx29plat_texture_splat_initializeEv)
+STUB(_ZN2Nx29plat_texture_splat_reset_polyEPNS_21sSplatInstanceDetailsEi)
+STUB(_ZN3SIO12KeyboardReadEPc)
+STUB(_ZN3SIO13KeyboardClearEv)
+STUB(_ZN3Tmr14GetRenderFrameEv)
+
+	.data
+	.align 4
+	.global gbQuit
+gbQuit:
+	.word 0
+	.size gbQuit, 4
+
+	.global gun_fired
+gun_fired:
+	.word 0
+	.size gun_fired, 4
+
+	.global screen_angle
+screen_angle:
+	.word 0
+	.size screen_angle, 4
+
+#else
+@ ARM 32-bit Thumb fallback
 	.text
 	.syntax unified
 	.thumb
@@ -12,10 +58,6 @@ _Z13MemViewTogglev:
 	bx	lr
 	.size _Z13MemViewTogglev, .-_Z13MemViewTogglev
 
-
-
-
-
 	.global _ZN2Nx12plat_shatterEPNS_5CGeomE
 	.thumb_func
 	.type _ZN2Nx12plat_shatterEPNS_5CGeomE, %function
@@ -24,11 +66,6 @@ _ZN2Nx12plat_shatterEPNS_5CGeomE:
 	vmov	s0, r0
 	bx	lr
 	.size _ZN2Nx12plat_shatterEPNS_5CGeomE, .-_ZN2Nx12plat_shatterEPNS_5CGeomE
-
-
-@ s_plat_alloc_window2d_pool : retire d'ici, vraie implementation dans
-@ Code/Gfx/Vita/p_NxWin2D.cpp. Le stub muet laissait la liste libre vide,
-@ donc sGetWindowInstance rendait NULL et le moteur mourait dessus.
 
 	.global _ZN2Nx18plat_texture_splatEPPNS_7CSectorEPPNS_11CCollStaticERN3Mth6VectorES8_ffPNS_8CTextureEPNS_26sSplatTrailInstanceDetailsE
 	.thumb_func
@@ -56,7 +93,6 @@ _ZN2Nx19plat_shatter_updateEPNS_23sShatterInstanceDetailsEf:
 	vmov	s0, r0
 	bx	lr
 	.size _ZN2Nx19plat_shatter_updateEPNS_23sShatterInstanceDetailsEf, .-_ZN2Nx19plat_shatter_updateEPNS_23sShatterInstanceDetailsEf
-
 
 	.global _ZN2Nx20plat_shatter_cleanupEv
 	.thumb_func
@@ -121,9 +157,6 @@ _ZN2Nx29plat_texture_splat_reset_polyEPNS_21sSplatInstanceDetailsEi:
 	bx	lr
 	.size _ZN2Nx29plat_texture_splat_reset_polyEPNS_21sSplatInstanceDetailsEi, .-_ZN2Nx29plat_texture_splat_reset_polyEPNS_21sSplatInstanceDetailsEi
 
-
-@ s_plat_alloc_text_pool : vraie implementation dans Code/Gfx/Vita/p_nx_pools.cpp
-
 	.global _ZN3SIO12KeyboardReadEPc
 	.thumb_func
 	.type _ZN3SIO12KeyboardReadEPc, %function
@@ -142,11 +175,6 @@ _ZN3SIO13KeyboardClearEv:
 	bx	lr
 	.size _ZN3SIO13KeyboardClearEv, .-_ZN3SIO13KeyboardClearEv
 
-
-
-
-
-
 	.global _ZN3Tmr14GetRenderFrameEv
 	.thumb_func
 	.type _ZN3Tmr14GetRenderFrameEv, %function
@@ -156,60 +184,19 @@ _ZN3Tmr14GetRenderFrameEv:
 	bx	lr
 	.size _ZN3Tmr14GetRenderFrameEv, .-_ZN3Tmr14GetRenderFrameEv
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	.data
 	.global gbQuit
-	.thumb_func
-	.type gbQuit, %function
 gbQuit:
-	movs	r0, #0
-	vmov	s0, r0
-	bx	lr
-	.size gbQuit, .-gbQuit
+	.word 0
+	.size gbQuit, 4
 
 	.global gun_fired
-	.thumb_func
-	.type gun_fired, %function
 gun_fired:
-	movs	r0, #0
-	vmov	s0, r0
-	bx	lr
-	.size gun_fired, .-gun_fired
+	.word 0
+	.size gun_fired, 4
 
 	.global screen_angle
-	.thumb_func
-	.type screen_angle, %function
 screen_angle:
-	movs	r0, #0
-	vmov	s0, r0
-	bx	lr
-	.size screen_angle, .-screen_angle
-
-@ Les trios sSgltnInstance/sSgltnDelete/sp_sgltn_instance de GameNet::Manager,
-@ Mc::Manager et SIO::Manager sont desormais dans Code/Sys/Vita/p_singletons.cpp.
-
-@ Les stubs GameNet ont ete retires : GameNet.cpp est desormais dans le build
-@ (voir vita/engine.cmake). Seul Lobby.cpp reste exclu, il tire GameSpy.
+	.word 0
+	.size screen_angle, 4
+#endif

@@ -1,11 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////////
-// p_world_render.h â€” rendu de la geometrie de niveau (palier 3)
+// p_world_render.h Ã¢â‚¬â€ rendu de la geometrie de niveau (palier 3)
 
 #ifndef __GFX_VITA_P_WORLD_RENDER_H__
 #define __GFX_VITA_P_WORLD_RENDER_H__
 
 #include "p_scene_load.h"
 #include <gfx/NxTexture.h>
+
+namespace Nx { class CVitaTexDict; }
 
 namespace NxVita
 {
@@ -30,20 +32,21 @@ void MondeSceneRetiree( const void *p_scene );
 bool MondeVide( void );
 // Detruit les dictionnaires de niveau que le moteur a rendus (p_nx_managers.cpp).
 void LibererDictsEnAttente( void );
+void RetirerDictEnAttente( Nx::CVitaTexDict *p_dict );
 // Textures et dictionnaires vivants (diagnostic, p_NxTexture.cpp).
 void CompteTextures( int *p_tex, unsigned int *p_texels, int *p_dicts );
 
-// Zoom du rendu 3D, reglable a chaud par la commande Â« zoom N.NN Â». 1.0 = le
+// Zoom du rendu 3D, reglable a chaud par la commande Ã‚Â« zoom N.NN Ã‚Â». 1.0 = le
 // champ de vision que demande la camera, sans correction.
 extern float g_vita_world_zoom;
 
-// Culling du decor, debrayable par la commande « cull 0 ».
+// Culling du decor, debrayable par la commande Â« cull 0 Â».
 extern bool g_vita_cull;
 
 // Compteur d'ordre de dessin dans la frame (voir p_world_render.cpp).
 extern int g_vita_ordre_modeles;
 
-// Dessin du ciel, debrayable par « sky 0 ».
+// Dessin du ciel, debrayable par Â« sky 0 Â».
 extern bool g_vita_sky;
 
 // Marquage magenta des materiaux multi-passes (diagnostic). Voir le .cpp.
@@ -55,7 +58,7 @@ extern bool g_vita_force_opaque;
 // Les trois corrections du pipeline, isolables a chaud. Voir le .cpp.
 extern bool g_vita_transp_flag;
 extern bool g_vita_zwrite_transp;
-extern bool g_vita_zeq;		// test de profondeur du decor LEQUAL (XBox), « zeq »
+extern bool g_vita_zeq;		// test de profondeur du decor LEQUAL (XBox), Â« zeq Â»
 extern bool g_vita_alpha_test;
 extern bool g_vita_multitex;
 extern bool g_vita_id_debug;
@@ -81,8 +84,8 @@ extern int  g_vita_teinte_budget_us;
 extern bool g_vita_teinte_neon;
 extern bool g_vita_teinte_scene;
 extern bool g_vita_ignore_vertex_alpha;
-// Tri par profondeur des translucides que le materiau marque « tries »
-// (commande « dpt 0/1 »). Voir le .cpp.
+// Tri par profondeur des translucides que le materiau marque Â« tries Â»
+// (commande Â« dpt 0/1 Â»). Voir le .cpp.
 extern bool g_vita_tri_profondeur;
 // Parcours unique de la liste du monde par image (commande " prep 0/1 " :
 // a 0, les listes sont reconstruites a chaque passe, pour mesurer).
@@ -106,10 +109,10 @@ void UVWibbleDecalage( const float *p_par, float t, float out[2] );
 // Dessine tout, en fil de fer plein, sans texture ni lumiere.
 void RenderWorld( void );
 
-// Decoupe du poste « monde » de la boucle principale (issue #69). Chaque appel
+// Decoupe du poste Â« monde Â» de la boucle principale (issue #69). Chaque appel
 // cloture l'etape en cours et ouvre l'etape e ; VitaMondeFin cloture la
 // derniere et journalise toutes les 120 images ([PROF] monde detail). Une
-// lecture d'horloge par etape (~25 par image). « pmd 0/1 » (p_siodev.cpp).
+// lecture d'horloge par etape (~25 par image). Â« pmd 0/1 Â» (p_siodev.cpp).
 enum
 {
 	MW_VCW = 0,		// couleurs animees + billboards (vcw_mettre_a_jour, bb_mettre_a_jour)
@@ -126,7 +129,7 @@ enum
 	MW_PART_A,		// anciennes particules (RenderParticulesAnciennes)
 	MW_PART_N,		// particules parametriques (RenderVita)
 	MW_REPORTES,	// morceaux translucides RIGIDES des modeles (fin de VitaDessinerModelesReportes)
-	MW_BB,			// billboards (bb_mettre_a_jour), retire de MW_VCW (issue #69, « bbl »)
+	MW_BB,			// billboards (bb_mettre_a_jour), retire de MW_VCW (issue #69, Â« bbl Â»)
 	MW_REP_REJEU,	// rejeu des poses (rejouer_poses), retire de MW_REPORTES
 	MW_REP_PEAU,	// translucides skinnes reportes (dessiner_peau_reportee), idem
 	MW_N
@@ -138,6 +141,7 @@ void VitaMondeFin( void );
 // Matrice de vue de la derniere frame, pour que les modeles se placent dans
 // le meme repere que le decor. Rend false tant qu'aucune camera n'existe.
 bool GetViewMatrix( float out[16] );
+bool GetProjMatrix( float out[16] );
 
 // Pose la projection perspective du monde. Indispensable avant de dessiner un
 // modele : sans elle, on herite de la projection ORTHOGRAPHIQUE laissee par la

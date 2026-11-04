@@ -52,7 +52,11 @@ GLuint CompilerShaderCache( GLenum type, const char *p_source, const char *p_nom
 static float         s_gamma[3] = { GAMMA_DEFAUT, GAMMA_DEFAUT, GAMMA_DEFAUT };
 static unsigned char s_table[3][GAMMA_DOMAINE];
 
+#if defined(__PLAT_LINUX__)
+int g_vita_gamma = 0;
+#else
 int g_vita_gamma = 1;
+#endif
 
 // gamma.cpp:93, gammaInitTable : out[i] = (BYTE)(256 * (i/256)^(1/g)).
 static void table_init( void )

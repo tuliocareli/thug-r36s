@@ -138,11 +138,11 @@ bool CSkaterProfile::Reset(Script::CStruct* pParams)
 
 	// at a minimum, the info structure must contain the trick_mapping structure
 	pTemp = new Script::CStruct;
-	m_Info.AddComponent( CRCD(0xd544aa2d,"trick_mapping"), ESYMBOLTYPE_STRUCTUREPOINTER, (int)pTemp );
+	m_Info.AddComponent( CRCD(0xd544aa2d,"trick_mapping"), ESYMBOLTYPE_STRUCTUREPOINTER, pTemp );
 
 	// as well as a special tricks array
 	pTemp = new Script::CStruct;
-	m_Info.AddComponent( CRCD(0xddbee809,"specials"), ESYMBOLTYPE_STRUCTUREPOINTER, (int)pTemp );
+	m_Info.AddComponent( CRCD(0xddbee809,"specials"), ESYMBOLTYPE_STRUCTUREPOINTER, pTemp );
 
 	Mem::Manager::sHandle().PopContext();
 
@@ -210,11 +210,11 @@ bool CSkaterProfile::PartialReset(Script::CStruct* pParams)
 	
     // at a minimum, the info structure must contain the trick_mapping structure
 	pTemp = new Script::CStruct;
-	m_Info.AddComponent( CRCD(0xd544aa2d,"trick_mapping"), ESYMBOLTYPE_STRUCTUREPOINTER, (int)pTemp );
+	m_Info.AddComponent( CRCD(0xd544aa2d,"trick_mapping"), ESYMBOLTYPE_STRUCTUREPOINTER, pTemp );
 
 	// as well as a special tricks array
 	pTemp = new Script::CStruct;
-	m_Info.AddComponent( CRCD(0xddbee809,"specials"), ESYMBOLTYPE_STRUCTUREPOINTER, (int)pTemp );
+	m_Info.AddComponent( CRCD(0xddbee809,"specials"), ESYMBOLTYPE_STRUCTUREPOINTER, pTemp );
 
 	Mem::Manager::sHandle().PopContext();
 
@@ -579,7 +579,7 @@ void CSkaterProfile::WriteIntoStructure( Script::CStruct* pStuff )
 	{
 		pTemp=new Script::CStruct;
 		pTemp->AppendStructure( m_Appearance.GetStructure() );
-		pSkaterInfo->AddComponent( CRCD(0x554c7d6f,"Appearance"), ESYMBOLTYPE_STRUCTUREPOINTER, (int)pTemp );
+		pSkaterInfo->AddComponent( CRCD(0x554c7d6f,"Appearance"), ESYMBOLTYPE_STRUCTUREPOINTER, pTemp );
 	}
 		
 	Gfx::CFaceTexture* pFaceTexture = m_Appearance.GetFaceTexture();
@@ -587,18 +587,18 @@ void CSkaterProfile::WriteIntoStructure( Script::CStruct* pStuff )
 	{
 		pTemp=new Script::CStruct;
 		pFaceTexture->WriteIntoStructure( pTemp );
-		pSkaterInfo->AddComponent( CRCD(0xf0d3bc94,"FaceTexture"), ESYMBOLTYPE_STRUCTUREPOINTER, (int)pTemp );
+		pSkaterInfo->AddComponent( CRCD(0xf0d3bc94,"FaceTexture"), ESYMBOLTYPE_STRUCTUREPOINTER, pTemp );
 	}
 
 	pTemp=new Script::CStruct;
 	pTemp->AppendStructure(&m_Info);
-	pSkaterInfo->AddComponent( CRCD(0x3476cea8,"Info"), ESYMBOLTYPE_STRUCTUREPOINTER, (int)pTemp );
+	pSkaterInfo->AddComponent( CRCD(0x3476cea8,"Info"), ESYMBOLTYPE_STRUCTUREPOINTER, pTemp );
 
 	uint32 Name=GetSkaterNameChecksum();
 	//pSkaterInfo->AddComponent(CRCD(0x95388a60,"DeckFlags"),ESYMBOLTYPE_INTEGER,(int)Front::GetDeckFlags(Name));
 	pSkaterInfo->AddComponent( CRCD(0x95388a60,"DeckFlags"), ESYMBOLTYPE_INTEGER, 0 );
 	
-	pStuff->AddComponent(Name,ESYMBOLTYPE_STRUCTUREPOINTER,(int)pSkaterInfo);
+	pStuff->AddComponent(Name,ESYMBOLTYPE_STRUCTUREPOINTER,pSkaterInfo);
 }
 
 /******************************************************************/

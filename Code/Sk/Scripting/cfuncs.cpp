@@ -13973,6 +13973,9 @@ bool ScriptLoadExecPS2( Script::CStruct *pParams, Script::CScript *pScript )
 	const char* p_string;
 	pParams->GetText( "elf", &p_string, true );
     Sys::LoadExec( p_string );
+#elif defined(__PLAT_LINUX__) || defined(__PLAT_VITA__)
+    Script::RunScript("dialog_box_exit");
+    Script::RunScript("load_skateshop");
 #endif // __PLAT_NGPS__
 	
     return true;		// actually will never get here}
@@ -14004,6 +14007,9 @@ bool ScriptExitDemo( Script::CStruct*, Script::CScript* )
 {
 #ifdef __PLAT_NGPS__
     Sys::ExitDemo();
+#elif defined(__PLAT_LINUX__) || defined(__PLAT_VITA__)
+    Script::RunScript("dialog_box_exit");
+    Script::RunScript("load_skateshop");
 #endif
 
 	return true;		// actually will never get here

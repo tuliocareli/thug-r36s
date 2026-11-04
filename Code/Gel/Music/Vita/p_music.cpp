@@ -1,34 +1,34 @@
 /*****************************************************************************
-**  THUG-Vita — backend musique / PCM                                       **
+**  THUG-Vita â€” backend musique / PCM                                       **
 **  Code/Gel/Music/Vita/p_music.cpp                                         **
 **                                                                          **
-**  LA MUSIQUE JOUE. Ce fichier n'est plus une rangée de stubs.             **
+**  LA MUSIQUE JOUE. Ce fichier n'est plus une rangÃ©e de stubs.             **
 **                                                                          **
-**  Tout le format a été établi mécaniquement AVANT d'écrire une ligne de   **
-**  C++, avec vita/tools/audio_check.py (même méthode que cas_check.py) :   **
+**  Tout le format a Ã©tÃ© Ã©tabli mÃ©caniquement AVANT d'Ã©crire une ligne de   **
+**  C++, avec vita/tools/audio_check.py (mÃªme mÃ©thode que cas_check.py) :   **
 **                                                                          **
-**  [VÉRIFIÉ] data/streams/pcm/music_pcm.dat est un index :                  **
+**  [VÃ‰RIFIÃ‰] data/streams/pcm/music_pcm.dat est un index :                  **
 **            uint32 nombre, puis nombre x { checksum, offset, taille }.     **
 **            Preuve : 4 + 167*12 == 2008 == taille exacte du fichier,       **
 **            aucun chevauchement, tout tient dans le .wad.                  **
 **                                                                          **
-**  [VÉRIFIÉ] Les entrées sont triées par checksum croissant, pour une       **
-**            recherche binaire. Confirmé par le backend d'origine :         **
+**  [VÃ‰RIFIÃ‰] Les entrÃ©es sont triÃ©es par checksum croissant, pour une       **
+**            recherche binaire. ConfirmÃ© par le backend d'origine :         **
 **            Gel/Music/Xbox/p_music.cpp:575.                                **
 **                                                                          **
-**  [VÉRIFIÉ] Le .wad concatène des RIFF/WAVE dont le formatTag vaut         **
-**            0x0069 = XBOX ADPCM — et NON du PCM, malgré le nom du          **
-**            dossier. 48000 Hz, stéréo, blockAlign 72, 4 bits.              **
-**            Contrôle : 48000/64 échantillons par bloc * 72 octets = 54000, **
-**            exactement l'avgBytesPerSec de l'en-tête.                      **
+**  [VÃ‰RIFIÃ‰] Le .wad concatÃ¨ne des RIFF/WAVE dont le formatTag vaut         **
+**            0x0069 = XBOX ADPCM â€” et NON du PCM, malgrÃ© le nom du          **
+**            dossier. 48000 Hz, stÃ©rÃ©o, blockAlign 72, 4 bits.              **
+**            ContrÃ´le : 48000/64 Ã©chantillons par bloc * 72 octets = 54000, **
+**            exactement l'avgBytesPerSec de l'en-tÃªte.                      **
 **                                                                          **
-**  [VÉRIFIÉ] data/streams/wma/ est VIDE sur cette ISO (0 octet). Aucun      **
-**            décodeur WMA n'est donc nécessaire — c'est ce qui rend ce      **
+**  [VÃ‰RIFIÃ‰] data/streams/wma/ est VIDE sur cette ISO (0 octet). Aucun      **
+**            dÃ©codeur WMA n'est donc nÃ©cessaire â€” c'est ce qui rend ce      **
 **            chantier faisable.                                             **
 **                                                                          **
 **  Xbox ADPCM est une variante d'IMA ADPCM. Par bloc et par canal :         **
-**  4 octets d'en-tête (prédicteur int16, index de pas uint8, un octet       **
-**  réservé) puis les données par groupes de 4 octets alternant les canaux.  **
+**  4 octets d'en-tÃªte (prÃ©dicteur int16, index de pas uint8, un octet       **
+**  rÃ©servÃ©) puis les donnÃ©es par groupes de 4 octets alternant les canaux.  **
 **                                                                          **
 **  VOIX (issue #20) : les flux de pcm.wad -- dialogues de mission,       **
 **  donneurs d'objectifs -- sont joues par le bloc "Flux de voix" plus     **
@@ -51,6 +51,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <vector>
+
+#if defined(__PLAT_LINUX__)
+#include <dirent.h>
+#include <sys/stat.h>
+#include <gel/movies/Vita/vita_bink.h>
+#endif
 
 #include "vita_log.h"
 
@@ -59,21 +66,18 @@ SVitaStreamInfo	gCurrentStreamInfo[ NUM_STREAMS ];
 namespace
 {
 
-// --- format, tel que mesuré ------------------------------------------------
+// --- format, tel que mesurÃ© ------------------------------------------------
 
-#define ADPCM_BLOC			72		/* blockAlign, stéréo */
+#define ADPCM_BLOC			72		/* blockAlign, stÃ©rÃ©o */
 #define ADPCM_ECH_PAR_BLOC	64		/* (72/2 - 4) * 2 */
 #define AUDIO_HZ			48000
 #define AUDIO_CANAUX		2
 
-// Granularité de sortie. sceAudioOutOutput bloque jusqu'à ce que le tampon
-// précédent soit consommé : c'est LUI qui cadence le thread, on n'a aucune
-// horloge à tenir nous-mêmes.
-#define GRAIN				1024	/* échantillons par appel, multiple de 64 */
+#define GRAIN				512		/* echantillons par appel, multiple de 64 */
 
 // Lecture disque par gros blocs. Une lecture de 576 octets par appel de sortie
-// ferait ~90 accès disque par seconde ; sur Vita le stockage est le vrai
-// goulot, et c'est exactement le genre d'I/O qui coûte des images.
+// ferait ~90 accÃ¨s disque par seconde ; sur Vita le stockage est le vrai
+// goulot, et c'est exactement le genre d'I/O qui coÃ»te des images.
 // 910 blocs = 65520 octets = ~1,2 s d'audio par lecture.
 #define BLOCS_PAR_LECTURE	910
 #define TAILLE_LECTURE		( BLOCS_PAR_LECTURE * ADPCM_BLOC )
@@ -93,16 +97,22 @@ struct SEntree
 static SEntree	*s_index			= NULL;
 static int		 s_index_nb			= 0;
 
-// --- état de lecture --------------------------------------------------------
+#if defined(__PLAT_LINUX__)
+static bool      s_musique_bik		= false;
+static VitaBink *s_bink_music		= NULL;
+static std::vector< short > s_bik_pcm;
+#endif
+
+// --- Ã©tat de lecture --------------------------------------------------------
 
 static SceUID	 s_wad				= -1;
 static int		 s_port				= -1;
 static SceUID	 s_thread			= -1;
 static bool		 s_thread_tourne	= false;
 
-// Protège les champs partagés avec le thread. Le moteur appelle Play/Stop
+// ProtÃ¨ge les champs partagÃ©s avec le thread. Le moteur appelle Play/Stop
 // depuis le thread principal pendant que le thread audio lit : sans verrou on
-// libère un tampon en cours de décodage.
+// libÃ¨re un tampon en cours de dÃ©codage.
 static SceUID	 s_mutex			= -1;
 
 static volatile bool	s_joue			= false;
@@ -112,13 +122,13 @@ static volatile uint32	s_prechargee	= 0;
 static volatile bool	s_a_precharger	= false;
 
 // Position dans le morceau courant.
-static uint32	s_pos_debut			= 0;	/* offset des données dans le .wad */
-static uint32	s_pos_taille		= 0;	/* octets de données ADPCM */
-static uint32	s_pos_lue			= 0;	/* octets déjà consommés */
+static uint32	s_pos_debut			= 0;	/* offset des donnÃ©es dans le .wad */
+static uint32	s_pos_taille		= 0;	/* octets de donnÃ©es ADPCM */
+static uint32	s_pos_lue			= 0;	/* octets dÃ©jÃ  consommÃ©s */
 
 static float	s_volume			= 50.0f;	// pourcentage 0..100 (DEFAULT_MUSIC_VOLUME)
 
-// Tampons. Alloués une fois : allouer dans le thread audio à chaque tour
+// Tampons. AllouÃ©s une fois : allouer dans le thread audio Ã  chaque tour
 // fragmenterait le tas pendant le jeu.
 static unsigned char	*s_lecture	= NULL;
 // DOUBLE TAMPON (#30) : sceAudioOutOutput ne copie pas le tampon, la Vita le
@@ -142,13 +152,72 @@ static int cmp_entree( const void *a, const void *b )
 	return ( ca < cb ) ? -1 : (( ca > cb ) ? 1 : 0 );
 }
 
+#if defined(__PLAT_LINUX__)
+static bool charge_index_bik( void )
+{
+	const char *dir_path = "Data/streams/music";
+	DIR *dir = opendir( dir_path );
+	if( !dir )
+	{
+		dir_path = "data/streams/music";
+		dir = opendir( dir_path );
+	}
+	if( !dir )
+	{
+		VLOG( "PCM", "dossier musique introuvable : Data/streams/music" );
+		return false;
+	}
+
+	std::vector< SEntree > entrees;
+	struct dirent *de;
+	while(( de = readdir( dir )) != NULL )
+	{
+		const char *ext = strrchr( de->d_name, '.' );
+		if( ext && ( strcasecmp( ext, ".bik" ) == 0 ))
+		{
+			uint32 cs = (uint32)strtoul( de->d_name, NULL, 16 );
+			if( cs != 0 )
+			{
+				SEntree e;
+				e.checksum = cs;
+				e.offset   = 0;
+				e.taille   = 0;
+				entrees.push_back( e );
+			}
+		}
+	}
+	closedir( dir );
+
+	if( entrees.empty() )
+	{
+		VLOG( "PCM", "aucun fichier .bik dans Data/streams/music" );
+		return false;
+	}
+
+	s_index_nb = (int)entrees.size();
+	s_index = (SEntree *)malloc( s_index_nb * sizeof( SEntree ));
+	if( !s_index )
+		return false;
+
+	memcpy( s_index, &entrees[0], s_index_nb * sizeof( SEntree ));
+	qsort( s_index, s_index_nb, sizeof( SEntree ), cmp_entree );
+	s_musique_bik = true;
+	VLOG( "PCM", "index musique PC (.bik) pret : %d pistes", s_index_nb );
+	return true;
+}
+#endif
+
 static bool charge_index( void )
 {
 	SceUID f = sceIoOpen( CHEMIN_MUSIC_DAT, SCE_O_RDONLY, 0 );
 	if( f < 0 )
 	{
+#if defined(__PLAT_LINUX__)
+		return charge_index_bik();
+#else
 		VLOG( "PCM", "index musique introuvable : %s", CHEMIN_MUSIC_DAT );
 		return false;
+#endif
 	}
 
 	uint32 nb = 0;
@@ -158,7 +227,7 @@ static bool charge_index( void )
 		return false;
 	}
 
-	// Garde-fou : un nombre absurde signifie un fichier tronqué ou d'un autre
+	// Garde-fou : un nombre absurde signifie un fichier tronquÃ© ou d'un autre
 	// format. Mieux vaut ne pas jouer de musique que d'allouer 4 Go.
 	if(( nb == 0 ) || ( nb > 100000 ))
 	{
@@ -188,9 +257,9 @@ static bool charge_index( void )
 
 	s_index_nb = (int)nb;
 
-	// Le backend d'origine compte sur un index déjà trié. On le retrie quand
-	// même : c'est instantané sur quelques centaines d'entrées, et une
-	// recherche binaire sur des données non triées échouerait silencieusement.
+	// Le backend d'origine compte sur un index dÃ©jÃ  triÃ©. On le retrie quand
+	// mÃªme : c'est instantanÃ© sur quelques centaines d'entrÃ©es, et une
+	// recherche binaire sur des donnÃ©es non triÃ©es Ã©chouerait silencieusement.
 	qsort( s_index, s_index_nb, sizeof( SEntree ), cmp_entree );
 
 	VLOG( "PCM", "index musique : %d pistes", s_index_nb );
@@ -212,9 +281,9 @@ static const SEntree *trouve( uint32 checksum )
 
 // --- thread de lecture ------------------------------------------------------
 
-// Lit l'en-tête RIFF du morceau et positionne la lecture sur ses données.
-// Rend false si l'en-tête n'est pas celui attendu — auquel cas on ne joue
-// rien plutôt que d'interpréter des octets au hasard comme du son.
+// Lit l'en-tÃªte RIFF du morceau et positionne la lecture sur ses donnÃ©es.
+// Rend false si l'en-tÃªte n'est pas celui attendu â€” auquel cas on ne joue
+// rien plutÃ´t que d'interprÃ©ter des octets au hasard comme du son.
 static bool prepare_morceau( const SEntree *p_e )
 {
 	unsigned char entete[64];
@@ -224,8 +293,8 @@ static bool prepare_morceau( const SEntree *p_e )
 	if( sceIoRead( s_wad, entete, sizeof( entete )) != (int)sizeof( entete ))
 		return false;
 
-	// « fmt » à l'offset 12, « data » à 40 : disposition RIFF fixe de ces
-	// fichiers, vérifiée sur l'ISO.
+	// Â« fmt Â» Ã  l'offset 12, Â« data Â» Ã  40 : disposition RIFF fixe de ces
+	// fichiers, vÃ©rifiÃ©e sur l'ISO.
 	if( memcmp( entete + 12, "fmt ", 4 ) != 0 )
 	{
 		VLOG( "PCM", "morceau %08x : pas de bloc fmt", p_e->checksum );
@@ -247,7 +316,7 @@ static bool prepare_morceau( const SEntree *p_e )
 	uint32 taille_data;
 	memcpy( &taille_data, entete + 44, 4 );
 
-	// L'en-tête pourrait annoncer plus que ce que l'entrée contient.
+	// L'en-tÃªte pourrait annoncer plus que ce que l'entrÃ©e contient.
 	if( taille_data > ( p_e->taille - 48 ))
 		taille_data = p_e->taille - 48;
 
@@ -268,11 +337,52 @@ static int thread_audio( SceSize, void * )
 
 		if( !joue )
 		{
-			// Rien à faire : on rend la main. Sans cette pause, ce thread
-			// mangerait un cœur entier pendant les menus silencieux.
+			// Rien Ã  faire : on rend la main. Sans cette pause, ce thread
+			// mangerait un cÅ“ur entier pendant les menus silencieux.
 			sceKernelDelayThread( 10000 );
 			continue;
 		}
+
+#if defined(__PLAT_LINUX__)
+		if( s_musique_bik )
+		{
+			s_bik_pcm.clear();
+			sceKernelLockMutex( s_mutex, 1, NULL );
+			VitaBink *bm = s_bink_music;
+			if( bm && s_joue && !s_pause )
+			{
+				int r = vita_bink_read_audio( bm );
+				if( r <= 0 )
+				{
+					// Fin du morceau BIK
+					s_joue = false;
+					s_fini = true;
+					vita_bink_close( s_bink_music );
+					s_bink_music = NULL;
+				}
+			}
+			sceKernelUnlockMutex( s_mutex, 1 );
+
+			const int total_ech = (int)s_bik_pcm.size() / AUDIO_CANAUX;
+			if( total_ech > 0 && s_port >= 0 )
+			{
+				int pos = 0;
+				while( pos < total_ech && s_thread_tourne && s_joue && !s_pause )
+				{
+					int n = total_ech - pos;
+					if( n > GRAIN )
+						n = GRAIN;
+					sceAudioOutOutputSamples( s_port, &s_bik_pcm[pos * AUDIO_CANAUX], n );
+					pos += n;
+				}
+			}
+			else
+			{
+				sceKernelDelayThread( 10000 );
+			}
+			continue;
+		}
+#endif
 
 		sceKernelLockMutex( s_mutex, 1, NULL );
 
@@ -309,9 +419,9 @@ static int thread_audio( SceSize, void * )
 
 		sceKernelUnlockMutex( s_mutex, 1 );
 
-		// Décodage puis sortie, PAR GRAIN. sceAudioOutOutput bloque : le
-		// verrou est relâché avant, sinon le thread principal resterait
-		// bloqué sur Stop pendant toute la durée d'un tampon.
+		// DÃ©codage puis sortie, PAR GRAIN. sceAudioOutOutput bloque : le
+		// verrou est relÃ¢chÃ© avant, sinon le thread principal resterait
+		// bloquÃ© sur Stop pendant toute la durÃ©e d'un tampon.
 		const int blocs = lu / ADPCM_BLOC;
 		int bloc = 0;
 		while(( bloc < blocs ) && s_thread_tourne )
@@ -329,8 +439,8 @@ static int thread_audio( SceSize, void * )
 					AUDIO_CANAUX, ADPCM_BLOC );
 			}
 
-			// Un grain incomplet en fin de morceau : on complète par du
-			// silence plutôt que d'envoyer les restes du tampon précédent.
+			// Un grain incomplet en fin de morceau : on complÃ¨te par du
+			// silence plutÃ´t que d'envoyer les restes du tampon prÃ©cÃ©dent.
 			const int ech_remplis = n * ADPCM_ECH_PAR_BLOC;
 			if( ech_remplis < GRAIN )
 			{
@@ -365,12 +475,12 @@ static void applique_volume( void )
 }
 
 // Le moteur fabrique ses noms de piste a la mode PS2 :
-// Sk/Scripting/cfuncs.cpp:3724 prefixe � MUSIC\\VAG\\SONGS\\ � -- VAG etant le
+// Sk/Scripting/cfuncs.cpp:3724 prefixe « MUSIC\\VAG\\SONGS\\ » -- VAG etant le
 // format audio de la PlayStation 2. Or l'index du .wad Xbox est construit sur
 // le nom NU.
 //
-// [VERIFIE] sur table : le CRC de � ACEYALONE � tombe dans l'index, celui de
-// � MUSIC\\VAG\\SONGS\\ACEYALONE � non ; 5 noms testes sur 5. Le CRC lui-meme a
+// [VERIFIE] sur table : le CRC de « ACEYALONE » tombe dans l'index, celui de
+// « MUSIC\\VAG\\SONGS\\ACEYALONE » non ; 5 noms testes sur 5. Le CRC lui-meme a
 // ete valide contre quatre constantes ecrites en dur dans le moteur (loop,
 // is_frontend, MusicVolume, MusicStreamVolume).
 static uint32 checksum_de_piste( const char *p_nom )
@@ -401,8 +511,88 @@ static inline void deverrouille( void )
 		sceKernelUnlockMutex( s_mutex, 1 );
 }
 
+#if defined(__PLAT_LINUX__)
+static void music_bink_audio_cb( void *user, const short *pcm, int count )
+{
+	(void)user;
+	if( pcm && count > 0 )
+	{
+		s_bik_pcm.insert( s_bik_pcm.end(), pcm, pcm + count * AUDIO_CANAUX );
+	}
+}
+
+static bool demarre_bik( uint32 checksum )
+{
+	verrouille();
+	if( s_bink_music )
+	{
+		vita_bink_close( s_bink_music );
+		s_bink_music = NULL;
+	}
+
+	char chemin[256];
+	snprintf( chemin, sizeof( chemin ), "Data/streams/music/%08x.bik", checksum );
+	struct stat st;
+	if( stat( chemin, &st ) != 0 )
+	{
+		snprintf( chemin, sizeof( chemin ), "Data/streams/music/%x.bik", checksum );
+		if( stat( chemin, &st ) != 0 )
+		{
+			snprintf( chemin, sizeof( chemin ), "data/streams/music/%08x.bik", checksum );
+			if( stat( chemin, &st ) != 0 )
+			{
+				snprintf( chemin, sizeof( chemin ), "data/streams/music/%x.bik", checksum );
+				if( stat( chemin, &st ) != 0 )
+				{
+					// Se o checksum exato n??o existir, usa uma das m??sicas da pasta indexada
+					if( s_index_nb > 0 && s_index )
+					{
+						uint32 fallback_cs = s_index[checksum % s_index_nb].checksum;
+						snprintf( chemin, sizeof( chemin ), "Data/streams/music/%08x.bik", fallback_cs );
+						if( stat( chemin, &st ) != 0 )
+							snprintf( chemin, sizeof( chemin ), "data/streams/music/%08x.bik", fallback_cs );
+					}
+					else
+					{
+						deverrouille();
+						VLOG( "PCM", "piste BIK %08x introuvable", checksum );
+						return false;
+					}
+				}
+			}
+		}
+	}
+
+	VitaBinkInfo info;
+	s_bink_music = vita_bink_open( chemin, &info, music_bink_audio_cb, NULL, 1.0f );
+	if( !s_bink_music )
+	{
+		deverrouille();
+		VLOG( "PCM", "echec ouverture piste BIK %s", chemin );
+		return false;
+	}
+
+	if( s_port >= 0 )
+	{
+		sceAudioOutFlushPort( s_port );
+		sceAudioOutSetConfig( s_port, GRAIN, info.sample_rate > 0 ? info.sample_rate : AUDIO_HZ, 0 );
+	}
+
+	s_joue  = true;
+	s_pause = false;
+	s_fini  = false;
+	VLOG( "PCM", "lecture BIK %08x : %s (audio %d Hz x%d)", checksum, chemin, info.sample_rate, info.channels );
+	deverrouille();
+	return true;
+}
+#endif
+
 static bool demarre( uint32 checksum )
 {
+#if defined(__PLAT_LINUX__)
+	if( s_musique_bik )
+		return demarre_bik( checksum );
+#endif
 	if(( s_wad < 0 ) || !s_index )
 		return false;
 
@@ -1008,14 +1198,17 @@ void	PCMAudio_Init( void )
 		return;
 	}
 
-	s_wad = sceIoOpen( CHEMIN_MUSIC_WAD, SCE_O_RDONLY, 0 );
-	if( s_wad < 0 )
+	if( !s_musique_bik )
 	{
-		VLOG( "PCM", "pas de musique : %s introuvable", CHEMIN_MUSIC_WAD );
-		free( s_index );
-		s_index = NULL;
-		s_index_nb = 0;
-		return;
+		s_wad = sceIoOpen( CHEMIN_MUSIC_WAD, SCE_O_RDONLY, 0 );
+		if( s_wad < 0 )
+		{
+			VLOG( "PCM", "pas de musique : %s introuvable", CHEMIN_MUSIC_WAD );
+			free( s_index );
+			s_index = NULL;
+			s_index_nb = 0;
+			return;
+		}
 	}
 
 	s_lecture = (unsigned char *)malloc( TAILLE_LECTURE );
@@ -1063,9 +1256,9 @@ bool	PCMAudio_PlayMusicStream( uint32 checksum )
 
 bool	PCMAudio_PreLoadMusicStream( uint32 checksum )
 {
-	// Rien à précharger : la lecture est en flux, elle démarre immédiatement.
-	// On mémorise la demande pour que StartPreLoaded l'exécute, comme attendu
-	// par music.cpp qui sépare les deux étapes.
+	// Rien Ã  prÃ©charger : la lecture est en flux, elle dÃ©marre immÃ©diatement.
+	// On mÃ©morise la demande pour que StartPreLoaded l'exÃ©cute, comme attendu
+	// par music.cpp qui sÃ©pare les deux Ã©tapes.
 	s_prechargee   = checksum;
 	s_a_precharger = true;
 	return true;
@@ -1073,9 +1266,9 @@ bool	PCMAudio_PreLoadMusicStream( uint32 checksum )
 
 bool	PCMAudio_PreLoadMusicStreamDone( void )
 {
-	// Toujours prêt : aucune étape de chargement séparée n'existe ici.
-	// Répondre false ferait attendre le moteur indéfiniment — c'est
-	// exactement ce qui figeait les cinématiques.
+	// Toujours prÃªt : aucune Ã©tape de chargement sÃ©parÃ©e n'existe ici.
+	// RÃ©pondre false ferait attendre le moteur indÃ©finiment â€” c'est
+	// exactement ce qui figeait les cinÃ©matiques.
 	return true;
 }
 
@@ -1089,9 +1282,19 @@ bool	PCMAudio_StartPreLoadedMusicStream( void )
 
 void	PCMAudio_StopMusic( bool )
 {
+	s_joue = false;
+	if( s_port >= 0 )
+		sceAudioOutFlushPort( s_port );
 	verrouille();
 	s_joue = false;
 	s_fini = true;
+#if defined(__PLAT_LINUX__)
+	if( s_bink_music )
+	{
+		vita_bink_close( s_bink_music );
+		s_bink_music = NULL;
+	}
+#endif
 	deverrouille();
 }
 
@@ -1102,6 +1305,8 @@ void	PCMAudio_Pause( bool pause, int ch )
 	if( ch == MUSIC_CHANNEL )
 	{
 		s_pause = pause;
+		if( pause && s_port >= 0 )
+			sceAudioOutFlushPort( s_port );
 		return;
 	}
 
@@ -1125,7 +1330,7 @@ int		PCMAudio_SetMusicVolume( float volume )
 
 int		PCMAudio_GetMusicStatus( void )
 {
-	// FREE quand rien ne joue : le moteur enchaîne. RUNNING pendant la
+	// FREE quand rien ne joue : le moteur enchaÃ®ne. RUNNING pendant la
 	// lecture, sinon il croirait le morceau fini et en lancerait un autre
 	// par-dessus.
 	return s_joue ? PCM_STATUS_RUNNING : PCM_STATUS_FREE;
@@ -1261,6 +1466,12 @@ int		PCMAudio_GetStreamStatus( int whichStream )
 
 bool	PCMAudio_TrackExists( const char *p_nom, int )
 {
+#if defined(__PLAT_LINUX__)
+	// No Linux / PC, o THUG registra faixas na playlist sem exigir indice pre-existente
+	// exatamente como no Win32 (win32_music.cpp:961)
+	(void)p_nom;
+	return true;
+#else
 	if( !p_nom || !s_index )
 		return false;
 
@@ -1272,6 +1483,7 @@ bool	PCMAudio_TrackExists( const char *p_nom, int )
 	// "MUSIC\VAG\SONGS\ACEYALONE" quand l'index attend "ACEYALONE".
 	// A remettre si une piste ne se lance pas.
 	return ok;
+#endif
 }
 
 // L'index tient lieu d'en-tete : il est charge une fois pour toutes par

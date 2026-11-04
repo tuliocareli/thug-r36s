@@ -580,6 +580,10 @@ bool CModel::AddGeom(const char* pMeshFileName, uint32 geomName, bool useAssetMa
 #ifdef __PLAT_VITA__
 	t_maillage = sceKernelGetProcessTimeWide();
 #endif
+	if ( !pMesh )
+	{
+		return false;
+	}
 	mp_geom[m_numGeoms] = Nx::CEngine::sInitGeom();
 
 	if ( mp_geom[m_numGeoms] )

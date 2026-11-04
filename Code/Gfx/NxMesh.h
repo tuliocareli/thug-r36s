@@ -20,6 +20,7 @@ namespace Nx
 {
 	class CTexDict;
 	class CCollObjTriData;
+	class CCollBSPNode;
 	class CHierarchyObject;
 
 class CMesh : public Spt::Class
@@ -56,6 +57,7 @@ protected:
 	char						m_coll_filename[128];						// collision filename (kept around for unload)
 	int							m_num_coll_objects;							// non-cloned collision
 	Nx::CCollObjTriData *		mp_coll_objects;
+	Nx::CCollBSPNode *			mp_bsp_nodes;
 	Mth::CBBox					m_collision_bbox;							// Bounding box of whole mesh
 
 	uint32						m_CASRemovalMask;

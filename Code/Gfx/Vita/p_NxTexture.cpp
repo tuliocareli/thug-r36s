@@ -1,5 +1,5 @@
 /*****************************************************************************
-**  THUG-Vita — backend graphique                                            **
+**  THUG-Vita â€” backend graphique                                            **
 **  Code/Gfx/Vita/p_NxTexture.cpp                                           **
 **                                                                          **
 **  Chargement des dictionnaires de textures (.tex.xbx).                    **
@@ -8,7 +8,7 @@
 **  d'etre retenus, parce qu'ils ne se devinent pas :                        **
 **                                                                          **
 **  1. ENTRELACEMENT. Les textures non compressees sont rangees en ordre de **
-**     Morton (« swizzle » Xbox). Les copier telles quelles donne une image **
+**     Morton (Â« swizzle Â» Xbox). Les copier telles quelles donne une image **
 **     en damier reconnaissable -- symptome utile, d'ailleurs : si l'ecran  **
 **     montre ce damier, c'est ici qu'il faut regarder.                      **
 **                                                                          **
@@ -24,6 +24,7 @@
 
 #include <core/defines.h>
 #include <sys/file/filesys.h>
+#include "p_world_render.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -43,7 +44,7 @@ namespace NxVita
 {
 void OublierAdressage( unsigned int tex );
 extern unsigned int g_vita_gen_pre;	// p_world_render.cpp
-// � dxa 0/1 � : realigner le pool circulaire de vitaGL avant chaque envoi
+// « dxa 0/1 » : realigner le pool circulaire de vitaGL avant chaque envoi
 // compresse (issue #11, voir envoi_dxt_prepare).
 bool g_vita_dxt_align = true;
 
@@ -54,14 +55,18 @@ bool g_vita_dxt_align = true;
 // pixel lointain allait chercher ses texels dans la texture pleine taille :
 // cache de textures du GPU ruine, bande passante gaspillee -- et scintillement.
 //
-// � mip N � : 0 = sans mips (ancien comportement), 1 = bilineaire + mip le
+// « mip N » : 0 = sans mips (ancien comportement), 1 = bilineaire + mip le
 // plus proche, 2 = trilineaire. Applique a chaud a toutes les textures du
 // decor qui ont une chaine de mips.
 // Defaut 0 (comportement d'origine) : aucun gain mesure tant que les DXT1, la
 // majorite du decor, n'ont pas leur chaine (le chemin compresse de vitaGL
-// plante, voir PORTING_NOTES). Lu AU CHARGEMENT : � mip 1 � a chaud n'a
+// plante, voir PORTING_NOTES). Lu AU CHARGEMENT : « mip 1 » a chaud n'a
 // d'effet que sur un niveau charge avec mip > 0.
+#if defined(__PLAT_LINUX__)
 int g_vita_mip = 0;
+#else
+int g_vita_mip = 1;
+#endif
 static GLuint *sp_tex_mip   = NULL;
 static int     s_nb_tex_mip = 0, s_cap_tex_mip = 0;
 
@@ -83,6 +88,20 @@ static void retenir_tex_mip( GLuint tex )
 		s_cap_tex_mip = cap;
 	}
 	sp_tex_mip[s_nb_tex_mip++] = tex;
+}
+
+static void oublier_tex_mip( GLuint tex )
+{
+	if( !tex )
+		return;
+	for( int i = 0; i < s_nb_tex_mip; ++i )
+	{
+		if( sp_tex_mip[i] == tex )
+		{
+			sp_tex_mip[i] = sp_tex_mip[--s_nb_tex_mip];
+			return;
+		}
+	}
 }
 
 void VitaAppliquerMip( int mode )
@@ -189,7 +208,7 @@ CVitaTexture::CVitaTexture()
 // qui aura recupere le numero. C'est le scenario a confirmer ou refuter ici.
 static int s_detruites = 0;
 
-// Commande � texsum N � : empreinte du contenu d'une texture GL, pour savoir
+// Commande « texsum N » : empreinte du contenu d'une texture GL, pour savoir
 // si ses donnees changent sous nos pieds (enquete sur le fond du menu qui vire
 // a la couleur d'effacement apres le mode demo, alors que la texture n'est
 // jamais detruite).
@@ -241,8 +260,10 @@ CVitaTexture::~CVitaTexture()
 	--s_tex_vivantes;
 	s_texels_vivants -= (unsigned)m_width * m_height;
 	NxVita::OublierAdressage( m_gl_texture );
+	NxVita::oublier_tex_mip( m_gl_texture );
 	noter_alpha_min( m_gl_texture, 0 );		// le nom pourra etre reutilise
-	glDeleteTextures( 1, &m_gl_texture );
+	if( m_gl_texture )
+		glDeleteTextures( 1, &m_gl_texture );
 	free( mp_img_path );
 }
 
@@ -272,7 +293,7 @@ void CVitaTexture::SetGLTexture( GLuint tex, uint16 w, uint16 h, bool transparen
 //
 // Transcrit du backend DX9 (DX9/NX/texture.cpp:207). L'algorithme entrelace
 // les bits des coordonnees X et Y ; on le deroule tel quel plutot que de le
-// reecrire « plus proprement » -- une reecriture non verifiee sur un format
+// reecrire Â« plus proprement Â» -- une reecriture non verifiee sur un format
 // binaire ne se distingue d'un bug que par l'image produite.
 // Decodage LOGICIEL du DXT5.
 //
@@ -354,6 +375,9 @@ static void decode_dxt5( unsigned char *p_dst, const unsigned char *p_src,
 		}
 	}
 }
+
+
+
 
 
 static void unswizzle( char *p_out, const char *p_in, int width, int height,
@@ -616,7 +640,6 @@ static int load_texture_stream( SReader *p_rd, const char *p_label,
 					++mips_envoyes;
 			}
 
-			// Le niveau 0 cree la texture.
 			if(( level == 0 ) && !s_error )
 			{
 				glGenTextures( 1, &gl_tex );
@@ -627,8 +650,7 @@ static int load_texture_stream( SReader *p_rd, const char *p_label,
 
 				if( dxt == 5 )
 				{
-					// DXT5 : decode en logiciel, vitaGL n'en restitue pas
-					// l'alpha (voir decode_dxt5).
+					// DXT5 : decode en logiciel pour preserver l'alpha exact
 					unsigned char *p_rgba5 =
 						(unsigned char *)malloc( mip_w * mip_h * 4 );
 					if( p_rgba5 )
@@ -643,13 +665,13 @@ static int load_texture_stream( SReader *p_rd, const char *p_label,
 				}
 				else if( dxt > 0 )
 				{
-					// Blocs 4x4 compresses, non entrelaces : televersement direct.
+					// Blocs 4x4 compresses DXT1 (Xbox dxt 1 et 2) : televersement direct.
 					GLenum fmt = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 					// Purge des erreurs precedentes, pour attribuer la
 					// suivante a CET upload.
 					while( glGetError() != GL_NO_ERROR ) {}
 					envoi_dxt_prepare();
-					noter_alpha_min( gl_tex, ( dxt == 1 ) ? alpha_min_dxt1( p_src, data_size ) : 0 );
+					noter_alpha_min( gl_tex, (( dxt == 1 ) || ( dxt == 2 )) ? alpha_min_dxt1( p_src, data_size ) : 0 );
 					glCompressedTexImage2D( GL_TEXTURE_2D, 0, fmt,
 					                        (GLsizei)mip_w, (GLsizei)mip_h, 0,
 					                        (GLsizei)data_size, p_src );
@@ -754,7 +776,7 @@ static int load_texture_stream( SReader *p_rd, const char *p_label,
 		}
 
 		// Deux checksums que le backend PC ecarte explicitement ; on fait
-		// pareil faute de savoir pourquoi (« hack from PC », p_nxtexture.cpp:698).
+		// pareil faute de savoir pourquoi (Â« hack from PC Â», p_nxtexture.cpp:698).
 		if(( checksum == 0x749DB390 ) || ( checksum == 0xD1CE9FFC ))
 		{
 			glDeleteTextures( 1, &gl_tex );
@@ -800,6 +822,7 @@ CVitaTexDict::CVitaTexDict( const char *p_tex_dict_name )
 CVitaTexDict::~CVitaTexDict()
 {
 	--s_dicts_vivants;
+	NxVita::RetirerDictEnAttente( this );
 }
 
 
@@ -1060,40 +1083,49 @@ bool CVitaTexture::plat_load_texture( const char *p_texture_name,
 // Appele par CTexDict::ReplaceTexture (NxTexture.cpp:930) : la nouvelle
 // texture vient d'etre chargee par nom, elle sera DETRUITE juste apres. Les
 // scripts CAS s'en servent pour la peau, les yeux et surtout le visage :
-// cas_skater_m.q:888 remplace « CS_NSN_facemap.png », une GRILLE de reperage
+// cas_skater_m.q:888 remplace Â« CS_NSN_facemap.png Â», une GRILLE de reperage
 // UV, par le vrai visage choisi. Sans cette fonction (stub de la classe de
 // base, qui rendait false), c'est la grille qui restait a l'ecran.
 bool CVitaTexture::plat_replace_texture( CTexture *p_texture )
 {
 	CVitaTexture *p_new = static_cast< CVitaTexture * >( p_texture );
 
-	if( !p_new || !p_new->mp_img_path || !m_gl_texture )
+	if( !p_new || !m_gl_texture )
 	{
 		VLOG( "TEX", "!! remplacement impossible : %s",
-		      !p_new ? "pas de texture" :
-		      !p_new->mp_img_path ? "source hors .img" : "cible sans image GL" );
+		      !p_new ? "pas de texture" : "cible sans image GL" );
 		return false;
 	}
 
-	// La transparence est une propriete du materiau tel que le modele a ete
-	// construit (tri, blend) ; on ne la laisse pas changer avec l'image.
 	const bool transparent = m_transparent;
-	if( !LoadVitaImgInto( this, p_new->mp_img_path, m_gl_texture ))
+	if( p_new->mp_img_path )
 	{
-		VLOG( "TEX", "!! remplacement : relecture de '%s' echouee",
-		      p_new->mp_img_path );
-		return false;
+		if( !LoadVitaImgInto( this, p_new->mp_img_path, m_gl_texture ))
+		{
+			VLOG( "TEX", "!! remplacement : relecture de '%s' echouee",
+			      p_new->mp_img_path );
+			return false;
+		}
+	}
+	else if( p_new->m_gl_texture )
+	{
+		// Si p_new provient d'un dictionnaire memoire sans chemin de fichier
+		if( m_gl_texture )
+			glDeleteTextures( 1, &m_gl_texture );
+		m_gl_texture = p_new->m_gl_texture;
+		m_width = p_new->m_width;
+		m_height = p_new->m_height;
+		p_new->m_gl_texture = 0;
 	}
 	m_transparent = transparent;
-	// Les lots precalcules ont COPIE le descripteur de texture (adresse des
-	// donnees comprise) : apres re-televersement, il pointe sur l'ancienne
-	// image, liberee. On les fait reconstruire (#32).
+
+	// Invalider les precalculs des shaders de decor / modeles
 	++NxVita::g_vita_gen_pre;
 
 	static int s_traced = 0;
 	if( s_traced++ < 40 )
 		VLOG( "TEX", "remplacement %08x <- '%s' (GL %u, %ux%u)",
-		      (unsigned)m_checksum, p_new->mp_img_path,
+		      (unsigned)m_checksum, p_new->mp_img_path ? p_new->mp_img_path : "(dynamique)",
 		      (unsigned)m_gl_texture, (unsigned)m_width, (unsigned)m_height );
 	return true;
 }
@@ -1103,7 +1135,7 @@ CTexture *CVitaTexDict::plat_load_texture( const char *p_texture_name,
                                            bool sprite, bool alloc_vram )
 {
 	// On passe par CTexture::LoadTexture, PAS directement par le chargeur :
-	// c'est cette couche qui prefixe « images/ » et qui calcule le checksum
+	// c'est cette couche qui prefixe Â« images/ Â» et qui calcule le checksum
 	// a partir du nom de fichier. La court-circuiter (premiere version) donne
 	// 315 chargements de sprite qui echouent tous, en silence.
 	CVitaTexture *p_texture = new CVitaTexture;
@@ -1113,6 +1145,23 @@ CTexture *CVitaTexDict::plat_load_texture( const char *p_texture_name,
 		return NULL;
 	}
 	return p_texture;
+}
+
+bool CVitaTexDict::plat_unload_texture( CTexture *p_texture )
+{
+	delete p_texture;
+	return true;
+}
+
+void CVitaTexDict::plat_add_texture( CTexture *p_texture )
+{
+	(void)p_texture;
+}
+
+bool CVitaTexDict::plat_remove_texture( CTexture *p_texture )
+{
+	(void)p_texture;
+	return true;
 }
 
 } // namespace Nx

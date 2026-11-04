@@ -2242,14 +2242,9 @@ bool CSkater::_function1( uint32 Checksum, Script::CStruct *pParams, Script::CSc
         // @script | SparksOn | turn sparks on
         // @flag RailNotRequired | 
 		case 0xe62f94a2: // SparksOn
-			Replay::WriteSparksOn();
-			Script::RunScript( CRCD(0xaf4475de,"sparks_on"), pParams, this );
+			// Desativado no R36S: faíscas de grind sobrecarregam a CPU e fillrate da GPU Mali
 			mSparksRequireRail=true;
-			mSparksOn=true;
-			if (pParams->ContainsFlag("RailNotRequired"))
-			{
-				mSparksRequireRail=false;
-			}	
+			mSparksOn=false;
 			break;
 
         // @script | SparksOff | turn sparks off
@@ -2450,8 +2445,8 @@ void CSkater::SparksOn()
 	// move this all to script, instead of calling the following
 	// script from C code.
 
-	Script::RunScript( CRCD(0xaf4475de,"sparks_on"), NULL, this );
-	mSparksOn = true;
+	// Desativado no R36S para evitar criação de faíscas pesadas durante grinds
+	mSparksOn = false;
 }
 
 void CSkater::SparksOff()

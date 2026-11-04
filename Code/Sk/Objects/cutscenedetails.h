@@ -101,6 +101,10 @@ public:
 	{
 		return m_videoStarted;
 	}
+	bool						IsAborted()
+	{
+		return m_videoAborted;
+	}
 
 protected:
 	void						get_current_frame( Mth::Quat* pQuat, Mth::Vector* pTrans );

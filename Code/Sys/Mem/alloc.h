@@ -423,7 +423,7 @@ inline void	Allocator::BlockHeader::DbgAllocateBlock( void )
 {	
 	
 
-	uint64* ptr = (uint64*)((uint)this + sSize );
+	uint64* ptr = (uint64*)((uintptr_t)this + sSize );
 
 	for ( uint i = 0; i < mSize; i += 8 )
 	{
@@ -440,7 +440,7 @@ inline void	Allocator::BlockHeader::DbgFreeBlock( void )
 {
 	
 	
-	uint64* ptr = (uint64*)((uint)this + sSize ); 	
+	uint64* ptr = (uint64*)((uintptr_t)this + sSize ); 	
 
 	for ( uint i = 0; i < mSize; i += 8 )
 	{

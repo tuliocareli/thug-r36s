@@ -51,6 +51,10 @@ VitaBink	*vita_bink_open( const char *path, VitaBinkInfo *info,
  * part dans le callback). 1 = image rendue, 0 = fin du fichier, <0 = erreur. */
 int			 vita_bink_next_frame( VitaBink *b, VitaBinkFrame *out );
 
+/* Lit e decodifica o próximo pacote de áudio (usado para streaming de música .bik).
+ * 1 = áudio decodificado e enviado ao callback, 0 = fim do arquivo, <0 = erro. */
+int			 vita_bink_read_audio( VitaBink *b );
+
 void		 vita_bink_close( VitaBink *b );
 
 #ifdef __cplusplus

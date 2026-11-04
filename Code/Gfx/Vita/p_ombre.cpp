@@ -44,7 +44,7 @@ extern "C"
 	extern GLboolean      is_rendering_display;
 }
 namespace NxVita { bool GxmListeOuverte( void ); }
-namespace NxVita { extern bool g_vita_zeq; }	// p_world_render.cpp, « zeq »
+namespace NxVita { extern bool g_vita_zeq; }	// p_world_render.cpp, Â« zeq Â»
 
 namespace NxVita
 {
@@ -52,7 +52,7 @@ namespace NxVita
 // p_shader_decor.cpp : compilation CG avec le cache disque ux0:data/thug/shd.
 GLuint CompilerShaderCache( GLenum type, const char *p_source, const char *p_nom );
 
-int g_vita_ombre = 1;	// valide sur console le 2026-10-03 (Manhattan, xemu), #45			// a 1 une fois valide a l'ecran
+int g_vita_ombre = 0;	// Desativado por padrao (Perfil A) para ganho de fillrate/FPS no R36S (Mali-G31)
 float g_vita_ombre_pf = -2.0f;		// XBox render.cpp:2328, SLOPESCALE
 float g_vita_ombre_pu = -4.0f;		// XBox render.cpp:2327, ZOFFSET
 // Auto-ombrage du skater (#45, p_ombre.h, "aom"). Coupe tant que non valide
@@ -166,6 +166,8 @@ bool OmbreModeleSuivi( const Nx::CModel *p_modele )
 {
 	if( !g_vita_ombre || !p_modele )
 		return false;
+	if( !g_vita_ombre || !p_modele )
+		return false;
 	for( int i = 0; i < OMB_MAX_PROJ; ++i )
 		if( s_proj[i].p_tex && ( s_proj[i].p_modele == p_modele ))
 			return true;
@@ -176,7 +178,7 @@ void OmbreCapturer( const void *p_geom, const Nx::CModel *p_modele,
                     const Nx::CVitaMesh *p_mesh, const float *p_racine,
                     const float *p_os, int num_os )
 {
-	if( !p_geom || !p_mesh || !p_racine || !p_os || ( num_os <= 0 ) || ( num_os > OMB_MAX_OS ))
+	if( !g_vita_ombre || !p_geom || !p_mesh || !p_racine || !p_os || ( num_os <= 0 ) || ( num_os > OMB_MAX_OS ))
 		return;
 
 	// Jeu d'os : les geoms d'un meme modele partagent le tableau de matrices
@@ -1127,7 +1129,7 @@ void OmbreReceptionFin( void )
 	glBindTexture( GL_TEXTURE_2D, 0 );
 	glUseProgram( 0 );
 	// Etat de la passe opaque, la ou RenderWorld l'attend (test du decor :
-	// LEQUAL comme XBox, « zeq »).
+	// LEQUAL comme XBox, Â« zeq Â»).
 	glDisable( GL_BLEND );
 	glDepthFunc( g_vita_zeq ? GL_LEQUAL : GL_LESS );
 	glDepthMask( GL_TRUE );

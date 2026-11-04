@@ -33,6 +33,7 @@
 
 namespace NxVita
 {
+	bool GetViewMatrix( float out[16] );
 
 // Brouillard (issue #45) : macro BROUILLARD_VS, dans p_shader_decor.h (les
 // particules du p_NxNewParticle.cpp s'en servent aussi).
@@ -249,8 +250,17 @@ void ShaderDecorTampons( unsigned int vbo, unsigned int uvbo, unsigned int cbo )
 	glVertexAttribPointer( ATTR_POSITION, 3, GL_FLOAT, GL_FALSE, 0, NULL );
 	glBindBuffer( GL_ARRAY_BUFFER, uvbo );
 	glVertexAttribPointer( ATTR_UV, 2, GL_FLOAT, GL_FALSE, 0, NULL );
-	glBindBuffer( GL_ARRAY_BUFFER, cbo );
-	glVertexAttribPointer( ATTR_COULEUR, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, NULL );
+	if( cbo )
+	{
+		glEnableVertexAttribArray( ATTR_COULEUR );
+		glBindBuffer( GL_ARRAY_BUFFER, cbo );
+		glVertexAttribPointer( ATTR_COULEUR, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, NULL );
+	}
+	else
+	{
+		glDisableVertexAttribArray( ATTR_COULEUR );
+		glVertexAttrib4f( ATTR_COULEUR, 0.5f, 0.5f, 0.5f, 1.0f );
+	}
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 }
 
@@ -301,7 +311,7 @@ static const char *op_combinaison( unsigned int mode )
 		case 5:  return "r = lerp(r, q, qa);";
 		case 6:  return "r = lerp(r, q, f);";
 		case 7:  return "r = r * qa;";
-		case 8:  return "r = r * f; r = saturate(r * qa + r);";
+		case 8:  return "r = r * f;";
 		case 9:  return "r = saturate(r * qa + r);";
 		case 10: return "r = saturate(r * f + r);";
 		case 12: return "r = lerp(r, q, m);";
@@ -328,6 +338,8 @@ struct SVarianteMateriau
 	float  c_pose[4][4];	// dernieres couleurs envoyees (evite les renvois)
 	GLint  fogp, fogc;		// uFogP, uFogC (issue #45)
 	float  fog_pose[8];		// dernieres valeurs envoyees
+	GLint  v_cam[3];		// uV0..2 pour env mapping (OpenGL/Linux)
+	GLint  e[4];			// uE0..3 pour env mapping (OpenGL/Linux)
 };
 
 // La table n'est jamais videe d'un niveau a l'autre : 128 debordait apres
@@ -343,7 +355,7 @@ static bool   s_echec_m = false;
 static bool   s_en_prechargement = false;
 static int    s_uv_actifs = 0;	// attributs d'UV actuellement actives
 
-enum { ATTR_UV3 = 4, ATTR_UV4 = 5 };
+enum { ATTR_UV3 = 4, ATTR_UV4 = 5, ATTR_NORMALE = 6 };
 
 // Cle : passes (3 bits), modes 1..3 (4 bits chacun), alphas ignores (4 bits),
 // test alpha (1 bit).
@@ -455,7 +467,7 @@ bool g_vita_var_hash = true;
 #define VAR_HASH_N 2048		// puissance de 2, > 3 x MAX_VARIANTES
 static short s_var_hash[VAR_HASH_N];
 static int   s_vh_recherches = 0, s_vh_sondes = 0, s_vh_poses_vs = 0;
-static int   s_vh_poses_evitees = 0;		// issue #69, « vpr »
+static int   s_vh_poses_evitees = 0;		// issue #69,  vpr 
 static inline unsigned int var_hash_pos( uint32 k )
 {
 	return ( k * 2654435761u ) >> ( 32 - 11 );		// 11 bits : VAR_HASH_N
@@ -591,6 +603,8 @@ static const SVarianteMateriau *variante( const SShaderMateriau *p )
 	for( int q = 0; q < p->passes; ++q )
 		if( !( p->env & ( 1u << q )))
 			glBindAttribLocation( v->prog, attr_uv[q], noms_in[q] );
+	if( v->env )
+		glBindAttribLocation( v->prog, ATTR_NORMALE, "aNormal" );
 	glLinkProgram( v->prog );
 	GLint ok = 0;
 	glGetProgramiv( v->prog, GL_LINK_STATUS, &ok );
@@ -617,6 +631,12 @@ static const SVarianteMateriau *variante( const SShaderMateriau *p )
 		static const char *noms_w[4] = { "uW0", "uW1", "uW2", "uW3" };
 		for( int q = 0; q < 4; ++q )
 			v->w[q] = ( v->wib & ( 1u << q )) ? glGetUniformLocation( v->prog, noms_w[q] ) : -1;
+		static const char *noms_v[3] = { "uV0", "uV1", "uV2" };
+		static const char *noms_e[4] = { "uE0", "uE1", "uE2", "uE3" };
+		for( int r = 0; r < 3; ++r )
+			v->v_cam[r] = v->env ? glGetUniformLocation( v->prog, noms_v[r] ) : -1;
+		for( int q = 0; q < 4; ++q )
+			v->e[q] = ( v->env & ( 1u << q )) ? glGetUniformLocation( v->prog, noms_e[q] ) : -1;
 	}
 	for( int q = 0; q < 4; ++q )
 		for( int w = 0; w < 4; ++w )
@@ -700,6 +720,23 @@ bool ShaderMateriauMaillage( const SShaderMateriau *p )
 	for( int k = 0; k < p->passes; ++k )
 		if( v->w[k] >= 0 )
 			glUniform4f( v->w[k], p->wib_uv[k][0], p->wib_uv[k][1], 0.0f, 0.0f );
+	if( v->env )
+	{
+		float vm[16];
+		NxVita::GetViewMatrix( vm );
+		for( int r = 0; r < 3; ++r )
+			if( v->v_cam[r] >= 0 )
+				glUniform4f( v->v_cam[r], vm[r], vm[4 + r], vm[8 + r], vm[12 + r] );
+		for( int k = 0; k < p->passes; ++k )
+			if( v->e[k] >= 0 )
+				glUniform4f( v->e[k], p->env_tile[k][0], p->env_tile[k][1], 0.0f, 0.0f );
+		if( p->nbo )
+		{
+			glEnableVertexAttribArray( ATTR_NORMALE );
+			glBindBuffer( GL_ARRAY_BUFFER, p->nbo );
+			glVertexAttribPointer( ATTR_NORMALE, 3, GL_FLOAT, GL_FALSE, 0, NULL );
+		}
+	}
 
 	static const int attr_uv[4] = { ATTR_UV, ATTR_UV2, ATTR_UV3, ATTR_UV4 };
 	glBindBuffer( GL_ARRAY_BUFFER, p->vbo );
@@ -720,8 +757,17 @@ bool ShaderMateriauMaillage( const SShaderMateriau *p )
 		glBindBuffer( GL_ARRAY_BUFFER, p->uvbo[k] );
 		glVertexAttribPointer( attr_uv[k], 2, GL_FLOAT, GL_FALSE, 0, NULL );
 	}
-	glBindBuffer( GL_ARRAY_BUFFER, p->cbo );
-	glVertexAttribPointer( ATTR_COULEUR, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, NULL );
+	if( p->cbo )
+	{
+		glEnableVertexAttribArray( ATTR_COULEUR );
+		glBindBuffer( GL_ARRAY_BUFFER, p->cbo );
+		glVertexAttribPointer( ATTR_COULEUR, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, NULL );
+	}
+	else
+	{
+		glDisableVertexAttribArray( ATTR_COULEUR );
+		glVertexAttrib4f( ATTR_COULEUR, 0.5f, 0.5f, 0.5f, 1.0f );
+	}
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 	return true;
 }
@@ -731,10 +777,18 @@ void ShaderMateriauFin()
 	static const int attr_uv[4] = { ATTR_UV, ATTR_UV2, ATTR_UV3, ATTR_UV4 };
 	glDisableVertexAttribArray( ATTR_POSITION );
 	glDisableVertexAttribArray( ATTR_COULEUR );
+	glDisableVertexAttribArray( ATTR_NORMALE );
 	for( int k = 0; k < 4; ++k )
 		glDisableVertexAttribArray( attr_uv[k] );
 	glUseProgram( 0 );
 	sp_var_cour = NULL;
+}
+
+void ShaderMateriauResetProgramme()
+{
+	glUseProgram( 0 );
+	sp_var_cour = NULL;
+	s_uv_actifs = -1;
 }
 
 
@@ -1063,8 +1117,8 @@ static const char *s_src_peau_vgl_lum_f =
 	"{\n"
 	"	float4 t = tex2D(uTex, vTexcoord);\n"
 	"	float4 c = lerp(float4(1.f, 1.f, 1.f, 1.f), t, uAvecTexture) * uTeinte;\n"
-	"	float a = saturate(c.a * vLum.w);\n"
-	"	clip(a - 0.5f / 255.f);\n"
+	"	float a = c.a;\n"
+	"	clip(c.a - 0.5f / 255.f);\n"
 	"	float4 mo = tex2D(uOmbre, vOmb.xy);\n"
 	"	float occ = mo.r / max(mo.g, 1.f / 255.f);\n"
 	"	float so = mo.g * saturate((saturate(vOmb.z) - occ - vOmb.w) * 127.f);\n"
@@ -1595,8 +1649,17 @@ void ShaderRigideEclairePiece( const float *mvp, unsigned int vbo, unsigned int 
 	glVertexAttribPointer( ATTR_RIG_POS, 3, GL_FLOAT, GL_FALSE, 0, NULL );
 	glBindBuffer( GL_ARRAY_BUFFER, nbo );
 	glVertexAttribPointer( ATTR_RIG_NORMALE, 3, GL_FLOAT, GL_FALSE, 0, NULL );
-	glBindBuffer( GL_ARRAY_BUFFER, cbo );
-	glVertexAttribPointer( ATTR_RIG_COULEUR, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, NULL );
+	if( cbo )
+	{
+		glEnableVertexAttribArray( ATTR_RIG_COULEUR );
+		glBindBuffer( GL_ARRAY_BUFFER, cbo );
+		glVertexAttribPointer( ATTR_RIG_COULEUR, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, NULL );
+	}
+	else
+	{
+		glDisableVertexAttribArray( ATTR_RIG_COULEUR );
+		glVertexAttrib4f( ATTR_RIG_COULEUR, 0.5f, 0.5f, 0.5f, 1.0f );
+	}
 	// Sans jeu d'UV, l'attribut lit les positions (12 octets par sommet,
 	// toujours dans le tampon) : la texture blanche ignore la valeur.
 	glBindBuffer( GL_ARRAY_BUFFER, ( avec_texture && uvbo ) ? uvbo : vbo );
@@ -1656,6 +1719,7 @@ void ShaderRigideEclaireFin()
 // (programmes, uniformes) : c'est GxmMateriauFin.
 
 
+#ifndef __PLAT_LINUX__
 extern "C"
 {
 	extern SceGxmContext       *gxm_context;
@@ -1694,14 +1758,14 @@ struct SGxmVariante
 	const SceGxmProgramParameter *pFogP, *pFogC;
 };
 
-// « gxd 0/1 » : lots opaques par le chemin GXM direct.
+//  gxd 0/1  : lots opaques par le chemin GXM direct.
 bool g_vita_gxm_direct = true;
 
 static unsigned char s_bin[64 * 1024];
 
 // Binaire vitaGL d'un shader -> SceGxmProgram enregistre aupres du patcher.
 // Le binaire vitaGL est un en-tete (uniformes matrices, ...) suivi du
-// programme GXM, qui commence par la signature « GXP\0 ».
+// programme GXM, qui commence par la signature  GXP\0 .
 static SceGxmProgram *programme_gxm( GLuint sh, SceGxmShaderPatcherId *p_id )
 {
 	GLsizei n = 0;
@@ -1731,7 +1795,7 @@ static SceGxmProgram *programme_gxm( GLuint sh, SceGxmShaderPatcherId *p_id )
 	return p;
 }
 
-// « vpr 0/1 » (issue #69) : programme de sommets PARTAGE entre variantes.
+//  vpr 0/1  (issue #69) : programme de sommets PARTAGE entre variantes.
 // Le vertex shader vitaGL est deja unique par (passes, reflet, wibble)
 // (vertex_shader_m, s_vs_m), mais chaque variante en tirait SA copie du
 // binaire GXP, enregistree a part : autant d'identifiants, donc de
@@ -1741,7 +1805,7 @@ static SceGxmProgram *programme_gxm( GLuint sh, SceGxmShaderPatcherId *p_id )
 // de sommets par vs_gl. Memes passes et meme reflet => memes attributs et
 // memes flux (calcules ci-dessous a l'identique), donc le programme cree
 // pour la premiere variante convient a toutes. Les variantes creees avec
-// « vpr 0 » gardent leur copie (comportement d'avant).
+//  vpr 0  gardent leur copie (comportement d'avant).
 bool g_vita_vpr = true;
 struct SVsPartage
 {
@@ -2038,7 +2102,7 @@ static inline void poser_variante_e( SGxmEtat *E, SGxmVariante *g, const SceGxmF
 	const bool fog_ok = ( E->fog_noir == noir ) && ( E->fog_gen == s_fog_gen );
 	if(( g == E->cour ) && fog_ok )
 		return;
-	// Issue #69 (« vpr ») : autre variante, MEME programme de sommets (voir
+	// Issue #69 ( vpr ) : autre variante, MEME programme de sommets (voir
 	// gxm_variante). Le contexte a deja ce programme, et le tampon d'uniformes
 	// de sommets reserve pour E->cour contient exactement ce que g y mettrait :
 	// meme programme donc memes emplacements, meme matrice (E->mvp, change
@@ -2046,7 +2110,7 @@ static inline void poser_variante_e( SGxmEtat *E, SGxmVariante *g, const SceGxmF
 	// brouillard (fog_ok). Tout ce qui pose un autre programme ou reserve un
 	// autre tampon remet E->cour a NULL (GxmMateriauDebut/Fin, GxmPeauDebut,
 	// GxmListeDebut, diff_fin_executer) : E->cour non nul garantit que l'etat
-	// est encore le sien -- la meme garantie que le saut « g == E->cour »
+	// est encore le sien -- la meme garantie que le saut  g == E->cour 
 	// ci-dessus. Variantes a reflet / wibble exclues : leur tampon est pose
 	// par dessin (poser_uniformes_env_e).
 	const bool meme_vp = g_vita_vpr && E->cour && ( E->cour->vp == g->vp )
@@ -2089,7 +2153,11 @@ static inline void poser_variante( SGxmVariante *g, const SceGxmFragmentProgram 
 // (buffers.c, glGenBuffers ; shared.h, struct vbo).
 static inline const unsigned char *donnees_tampon( unsigned int nom )
 {
+#if defined(__PLAT_LINUX__)
+	return NULL;
+#else
 	return nom ? *(const unsigned char * const *)nom : NULL;
+#endif
 }
 
 // --- Etats precalcules ------------------------------------------------------
@@ -2407,7 +2475,7 @@ void GxmMateriauFin()
 
 // --- Personnages en GXM direct (issue #18) ----------------------------------
 //
-// [MESURE] V1 : sauter le dessin des modeles (« mdl 0 ») fait passer la phase
+// [MESURE] V1 : sauter le dessin des modeles ( mdl 0 ) fait passer la phase
 // logique de 7,0 a 4,2 ms. Le skinning est deja sur le GPU : ce qui coute est
 // la soumission par vitaGL -- 192 float4 d'os recopies dans le tampon
 // d'uniformes a CHAQUE glDrawElements, plus programme, attributs et uniformes
@@ -2591,7 +2659,7 @@ bool GxmPeauEclaireePret()
 // (meme squelette, meme matrice) : ecrire 55 os dans la memoire GPU non cachee
 // coute ~25 us (mesure), et un skater a 9 geoms. Valable seulement si
 // personne n'a dessine entre-temps : vitaGL remet a faux ses drapeaux
-// « dirty » des qu'il dessine, et GxmPeauFin les laisse tous a vrai.
+//  dirty  des qu'il dessine, et GxmPeauFin les laisse tous a vrai.
 static const float *sp_gp_os_der = NULL;
 static int          s_gp_n_der = -1;
 static float        s_gp_mvp_der[16];
@@ -2682,7 +2750,7 @@ void GxmPeauDebut( const float *mvp, const float *p_os, int num_os, bool remplir
 	s_gp_image_der = vgl_framecount;
 	memcpy( s_gp_mvp_der, mvp, sizeof( s_gp_mvp_der ));
 	// Un tampon rempli partiellement ne vaut que pour un maillage qui n'a pas
-	// besoin du reste : on ne le reutilise pas pour un « remplir ».
+	// besoin du reste : on ne le reutilise pas pour un  remplir .
 	s_gp_ub_ok = !remplir_os;
 }
 
@@ -2984,7 +3052,7 @@ void GxmTravFin( void )
 	}
 }
 
-// Etape 0 (« gcl ») : les dessins GXM suivants du thread principal sont
+// Etape 0 ( gcl ) : les dessins GXM suivants du thread principal sont
 // enregistres dans une liste, executee a GxmListeFin.
 static bool s_liste_ouverte = false;
 static SceGxmContext *sp_ctx_imm = NULL;
@@ -3021,6 +3089,44 @@ void GxmListeFin( void )
 	gxm_context = sp_ctx_imm;
 	diff_fin_executer( &s_diff0 );
 }
+#else
+static unsigned int s_fog_gen = 1;
+bool g_vita_listes_gxm = false;
+bool g_vita_lots_mt = false;
+bool g_vita_gxm_peau = false;
+
+bool GxmMateriauPret() { return false; }
+void GxmMateriauDebut( const float *mvp, const float *vue, bool pass_reflet ) {}
+void GxmMateriauPlages( const SShaderMateriau *p, SceGxmTexture *const *p_tex,
+                     const int *p_first, const int *p_count, int n_plages,
+                     unsigned int ibo, int famille ) {}
+void *GxmMateriauPreparer( const SShaderMateriau *p, SceGxmTexture *const *p_tex,
+                           int first, int count, unsigned int ibo, int famille ) { return NULL; }
+void  GxmMateriauLotPre( void *p_pre ) {}
+void  GxmMateriauLibererPre( void *p_pre ) {}
+void  GxmMateriauVue( const float *view ) {}
+bool  GxmMateriauMaillage( const SShaderMateriau *p, SceGxmTexture *const *p_tex,
+                          unsigned int ibo, int num_indices, int famille ) { return false; }
+void  GxmMateriauFin() {}
+
+bool GxmListeDebut( void ) { return false; }
+bool GxmListeOuverte( void ) { return false; }
+void GxmListeFin( void ) {}
+
+bool GxmTravDebut( const float *mvp, const float *vue ) { return false; }
+bool GxmTravPousser( void *p_pre ) { return false; }
+void GxmTravFin( void ) {}
+
+bool GxmPeauPret() { return false; }
+bool GxmPeauEclaireePret() { return false; }
+void GxmPeauDebut( const float *mvp, const float *p_os, int num_os, bool remplir_os,
+                   const float *lum ) {}
+void GxmPeauPiece( unsigned int vbo_repos, unsigned int vbo_poids, unsigned int vbo_os,
+                   unsigned int uvbo, void *p_tex, bool avec_texture, const float teinte[4],
+                   unsigned int ibo, int num_indices, unsigned int vbo_normales ) {}
+void GxmPeauFin() {}
+#endif
+
 
 
 // --- Brouillard (issue #45) --------------------------------------------------
@@ -3035,11 +3141,14 @@ void GxmListeFin( void )
 // Densite initiale 0 (XBox/NX/nx_init.cpp:124), table lineaire (:181).
 
 int g_vita_fog = 1;
+int g_vita_distance_fog = 1;	// Neblina de distancia para ocultar o horizonte e cortar geometria pesada
+
+extern float g_vita_plan_loin;
 
 static bool  s_fog_actif   = false;
 static float s_fog_densite = 0.0f;
-static float s_fog_rgb[3]  = { 0.0f, 0.0f, 0.0f };
-static int   s_fog_rgba[4] = { 0, 0, 0, 0 };
+static float s_fog_rgb[3]  = { 0.55f, 0.63f, 0.71f };
+static int   s_fog_rgba[4] = { 140, 160, 180, 128 };
 static float s_fog_proche  = 0.0f;
 static const float FOG_PLAGE = 600.0f * 12.0f;	// FEET_TO_INCHES( 600 )
 
@@ -3090,7 +3199,11 @@ void BrouillardCouleur( int r, int g, int b, int a )
 
 bool BrouillardActif( void )
 {
-	return g_vita_fog && s_fog_actif && ( s_fog_densite > 0.0f );
+	if( !g_vita_fog )
+		return false;
+	if( s_fog_actif && ( s_fog_densite > 0.0f ))
+		return true;
+	return g_vita_distance_fog != 0;
 }
 
 void BrouillardUniformes( bool noir, bool ciel, float P[4], float C[4] )
@@ -3101,17 +3214,27 @@ void BrouillardUniformes( bool noir, bool ciel, float P[4], float C[4] )
 		C[0] = C[1] = C[2] = C[3] = 0.0f;
 		return;
 	}
-	P[0] = s_fog_densite;
-	if( ciel )
+	if( s_fog_actif && ( s_fog_densite > 0.0f ))
 	{
-		// XBox/p_nx.cpp:329 : debut -20, fin -21 le temps du ciel.
-		P[1] = 21.0f;
-		P[2] = 1.0f;
+		P[0] = s_fog_densite;
+		if( ciel )
+		{
+			// XBox/p_nx.cpp:329 : debut -20, fin -21 le temps du ciel.
+			P[1] = 21.0f;
+			P[2] = 1.0f;
+		}
+		else
+		{
+			P[1] = s_fog_proche + FOG_PLAGE;
+			P[2] = 1.0f / FOG_PLAGE;
+		}
 	}
 	else
 	{
-		P[1] = s_fog_proche + FOG_PLAGE;
-		P[2] = 1.0f / FOG_PLAGE;
+		const float plage = ( g_vita_plan_loin > 8000.0f ) ? ( g_vita_plan_loin - 8000.0f ) : 10000.0f;
+		P[0] = 1.0f;
+		P[1] = g_vita_plan_loin;
+		P[2] = 1.0f / plage;
 	}
 	P[3] = 0.0f;
 	for( int k = 0; k < 3; ++k )
@@ -3120,13 +3243,6 @@ void BrouillardUniformes( bool noir, bool ciel, float P[4], float C[4] )
 }
 
 // Pipeline fixe : glFog de vitaGL, lineaire, applique avant le melange
-// (vitaGL shaders/ffp_f.h : texColor.rgb = lerp(fogColor, texColor, vFog),
-// vFog = clamp(( fin - d ) / ( fin - debut ), 0, 1), d = profondeur en vue).
-// Il faut 1 - vFog = densite x ( 1 - f ) : c'est encore une rampe lineaire, de
-// debut = proche a fin = proche + plage / densite. Seul ecart : au-dela de
-// proche + plage, XBox plafonne a la densite, vitaGL continue de monter.
-// Ciel : vFog constant = 1 - densite, par une rampe si longue (1e8) que d n'y
-// change rien.
 static int s_ffp_mode = 0;
 static int s_ffp_noir = -1;
 
@@ -3149,14 +3265,26 @@ void BrouillardFixe( int mode )
 	float debut, fin;
 	if( mode == 2 )
 	{
+		// Ciel : ne pas voiler completement le ciel
 		const float R = 1.0e8f;
-		fin   = ( 1.0f - s_fog_densite ) * R;
+		fin   = ( 1.0f - ( s_fog_actif ? s_fog_densite : 0.0f )) * R;
 		debut = fin - R;
 	}
-	else
+	else if( s_fog_actif && ( s_fog_densite > 0.0f ))
 	{
 		debut = s_fog_proche;
 		fin   = s_fog_proche + FOG_PLAGE / s_fog_densite;
+	}
+	else
+	{
+		// Brouillard de distance par defaut : commence a 8000 et masque a la limite de plan_loin
+		#if defined(__PLAT_LINUX__)
+		debut = 6000.0f;
+		fin   = g_vita_plan_loin;
+#else
+		debut = 8000.0f;
+		fin   = g_vita_plan_loin;
+#endif
 	}
 	glFogf( GL_FOG_START, debut );
 	glFogf( GL_FOG_END, fin );

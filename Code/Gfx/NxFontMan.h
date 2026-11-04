@@ -49,7 +49,8 @@ private:
 	};
 	
 	static FontEntry 					s_font_tab[vMAX_FONT_ENTRIES];
-	static Lst::HashTable<FontEntry>	s_font_lookup;
+	static Lst::HashTable<FontEntry>*	s_p_font_lookup;
+	static Lst::HashTable<FontEntry>&	GetFontLookup();
 
 	static char					s_meta_button_map[NUM_META_BUTTON_ENTRIES];
 	static bool					s_meta_button_map_initialized;

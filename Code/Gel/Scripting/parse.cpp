@@ -1465,15 +1465,19 @@ void PreProcessScript(uint8 *p_token)
 				// a qb file that refers to a script that has not been written yet.
 				if (p_entry)
 				{
+#ifndef __LP64__
 					if (p_entry->mType==ESYMBOLTYPE_CFUNCTION)
 					{
 						// Change the token type and replace the checksum with the
 						// function pointer to save having to resolve it later.
+						// (Disabled on 64-bit systems because function pointers do not fit in 4 bytes)
 						*(p_token-5)=ESCRIPTTOKEN_RUNTIME_CFUNCTION;
 						Dbg_MsgAssert(p_entry->mpCFunction,("NULL p_entry->mpCFunction"));
 						Write4Bytes(p_token-4, (uint32)p_entry->mpCFunction);
 					}
-					else if (p_entry->mType==ESYMBOLTYPE_MEMBERFUNCTION)
+					else
+#endif
+					if (p_entry->mType==ESYMBOLTYPE_MEMBERFUNCTION)
 					{
 						// Saves having to look up the checksum later to find out that it is
 						// a member function.

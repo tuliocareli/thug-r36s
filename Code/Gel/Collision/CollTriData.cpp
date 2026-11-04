@@ -139,6 +139,104 @@ CCollObjTriData::~CCollObjTriData()
 /*                                                                */
 /******************************************************************/
 
+CCollBSPNode * CCollObjTriData::s_deserialize_bsp_tree(const void *p_disk_node_addr, uint32 node_array_size, void *p_base_face_idx_addr, int &out_num_nodes)
+{
+	out_num_nodes = 0;
+	if (!p_disk_node_addr || node_array_size == 0)
+		return NULL;
+
+	int num_nodes = node_array_size / sizeof(SDiskBSPNode);
+	if (num_nodes <= 0)
+		return NULL;
+
+	CCollBSPNode *p_runtime_nodes = (CCollBSPNode *) malloc(sizeof(CCollBSPNode) * num_nodes);
+	if (!p_runtime_nodes)
+		return NULL;
+	memset(p_runtime_nodes, 0, sizeof(CCollBSPNode) * num_nodes);
+
+	const SDiskBSPNode *p_disk_nodes = (const SDiskBSPNode *) p_disk_node_addr;
+
+	for (int i = 0; i < num_nodes; i++)
+	{
+		uint8 axis = p_disk_nodes[i].leaf.m_split_axis & 0x3;
+		if (axis == 3) // Leaf
+		{
+			p_runtime_nodes[i].SetSplitAxis(3);
+			p_runtime_nodes[i].m_leaf.m_pad1 = p_disk_nodes[i].leaf.m_pad1;
+			p_runtime_nodes[i].m_leaf.m_num_faces = p_disk_nodes[i].leaf.m_num_faces;
+			p_runtime_nodes[i].m_leaf.mp_face_idx_array = ((FaceIndex *) p_base_face_idx_addr) + p_disk_nodes[i].leaf.m_face_idx_offset;
+		}
+		else // Node
+		{
+			p_runtime_nodes[i].m_node.m_split_point = p_disk_nodes[i].node.m_split_point;
+			p_runtime_nodes[i].m_node.m_children.Init();
+			uint32 child_byte_offset = p_disk_nodes[i].node.m_left_child_and_flags & ~((uint32)0x3);
+			int child_index = child_byte_offset / sizeof(SDiskBSPNode);
+			if (child_index >= 0 && child_index < num_nodes)
+			{
+				p_runtime_nodes[i].m_node.m_children.SetBasePointer(&p_runtime_nodes[child_index]);
+			}
+			if (p_disk_nodes[i].node.m_left_child_and_flags & 0x1)
+			{
+				p_runtime_nodes[i].m_node.m_children.SetLeftGreater(true);
+			}
+		}
+	}
+
+	out_num_nodes = num_nodes;
+	return p_runtime_nodes;
+}
+
+/******************************************************************/
+/*                                                                */
+/*                                                                */
+/******************************************************************/
+
+bool CCollObjTriData::Deserialize(const SDiskCollObjTriData &disk_obj, void *p_base_vert_addr, void *p_base_intensity_addr,
+								  void *p_base_face_addr, CCollBSPNode *p_runtime_nodes, int num_runtime_nodes)
+{
+	m_checksum = disk_obj.m_checksum;
+	m_Flags = disk_obj.m_Flags;
+	m_num_verts = disk_obj.m_num_verts;
+	m_num_faces = disk_obj.m_num_faces;
+	m_use_face_small = disk_obj.m_use_face_small;
+	m_use_fixed_verts = disk_obj.m_use_fixed_verts;
+	m_bbox = disk_obj.m_bbox;
+
+	mp_faces = (SFace *)( (uint8 *) p_base_face_addr + disk_obj.m_faces_offset );
+
+#ifdef FIXED_POINT_VERTICES
+	mp_float_vert = (SFloatVert *)( (uint8 *) p_base_vert_addr + disk_obj.m_vert_offset );
+#else
+	mp_vert_pos = (Mth::Vector *)( (uint8 *) p_base_vert_addr + disk_obj.m_vert_offset );
+#endif
+
+	if (p_base_intensity_addr)
+		mp_intensity = (uint8 *) p_base_intensity_addr + disk_obj.m_intensity_offset;
+	else
+		mp_intensity = NULL;
+
+	if (p_runtime_nodes && num_runtime_nodes > 0)
+	{
+		int root_node_idx = disk_obj.m_bsp_offset / sizeof(SDiskBSPNode);
+		if (root_node_idx >= 0 && root_node_idx < num_runtime_nodes)
+			mp_bsp_tree = &p_runtime_nodes[root_node_idx];
+		else
+			mp_bsp_tree = NULL;
+	}
+	else
+	{
+		mp_bsp_tree = NULL;
+	}
+
+	return true;
+}
+
+/******************************************************************/
+/*                                                                */
+/*                                                                */
+/******************************************************************/
+
 bool	CCollObjTriData::InitCollObjTriData(CScene * p_scene, void *p_base_vert_addr, void *p_base_intensity_addr,
 											void *p_base_face_addr, void *p_base_node_addr, void *p_base_face_idx_addr)
 {
@@ -151,25 +249,25 @@ bool	CCollObjTriData::InitCollObjTriData(CScene * p_scene, void *p_base_vert_add
 #else
 #ifdef FIXED_POINT_VERTICES
 	// Get indexes
-	int start_vert_pos_offset = (int) mp_float_vert;
-	int start_intensity_index = (int) mp_intensity;
+	uintptr_t start_vert_pos_offset = (uintptr_t) mp_float_vert;
+	uintptr_t start_intensity_index = (uintptr_t) mp_intensity;
 
 	// Find first element
-	mp_float_vert = (SFloatVert *) ((int) p_base_vert_addr + start_vert_pos_offset);
+	mp_float_vert = (SFloatVert *) ((uintptr_t) p_base_vert_addr + start_vert_pos_offset);
 	mp_intensity = (uint8 *) p_base_intensity_addr;
 	mp_intensity += start_intensity_index;
 #else
 	// Get indexes
-	int start_vert_pos_offset = (int) mp_vert_pos;
+	uintptr_t start_vert_pos_offset = (uintptr_t) mp_vert_pos;
 
 	// Find first element
-	mp_vert_pos = (Mth::Vector *) ((int) p_base_vert_addr + start_vert_pos_offset);
+	mp_vert_pos = (Mth::Vector *) ((uintptr_t) p_base_vert_addr + start_vert_pos_offset);
 
 	mp_intensity = NULL;
 #endif // FIXED_POINT_VERTICES
 #endif		// __PLAT_NGC__
 
-	mp_faces = (SFace *)((int) mp_faces + (int) p_base_face_addr);
+	mp_faces = (SFace *)((uintptr_t) mp_faces + (uintptr_t) p_base_face_addr);
 
 	//Dbg_Message ( "Object has %d verts sizeof %d", m_num_verts, sizeof(SReadVertex));
 	//Dbg_Message ( "Object has %d faces sizeof %d", m_num_faces, sizeof(SReadFace) );
@@ -178,7 +276,7 @@ bool	CCollObjTriData::InitCollObjTriData(CScene * p_scene, void *p_base_vert_add
 #endif
 
 	// Init BSP tree
-	mp_bsp_tree = (CCollBSPNode *)((int) mp_bsp_tree + (int) p_base_node_addr);
+	mp_bsp_tree = (CCollBSPNode *)((uintptr_t) mp_bsp_tree + (uintptr_t) p_base_node_addr);
 	s_init_tree(mp_bsp_tree, p_base_node_addr, p_base_face_idx_addr);
 
 	return true;
@@ -279,19 +377,19 @@ CCollBSPNode * CCollBSPNode::clone(bool instance)
 #endif //	__NOPT_ASSERT__
 
 		// Now adjust the pointers by finding the differences
-		int node_address_diff = (int) p_new_bsp_array - (int) this;
-		int face_address_diff = (int) p_new_face_index_array - (int) p_orig_face_index_array;
+		intptr_t node_address_diff = (intptr_t) p_new_bsp_array - (intptr_t) this;
+		intptr_t face_address_diff = (intptr_t) p_new_face_index_array - (intptr_t) p_orig_face_index_array;
 		for (int i = 0; i < num_nodes; i++)
 		{
 			if (p_new_bsp_array[i].IsNode())
 			{
 				// Adjust branch pointers
-				p_new_bsp_array[i].m_node.m_children.SetBasePointer((CCollBSPNode *)((int) p_new_bsp_array[i].m_node.m_children.GetBasePointer() + node_address_diff));
+				p_new_bsp_array[i].m_node.m_children.SetBasePointer((CCollBSPNode *)((uintptr_t) p_new_bsp_array[i].m_node.m_children.GetBasePointer() + node_address_diff));
 			}
 			else
 			{
 				// Adjust face index pointer
-				p_new_bsp_array[i].m_leaf.mp_face_idx_array = (FaceIndex *) ((int) p_new_bsp_array[i].m_leaf.mp_face_idx_array + face_address_diff);
+				p_new_bsp_array[i].m_leaf.mp_face_idx_array = (FaceIndex *) ((uintptr_t) p_new_bsp_array[i].m_leaf.mp_face_idx_array + face_address_diff);
 			}
 		}
 
@@ -511,7 +609,7 @@ bool	CCollObjTriData::s_init_tree(CCollBSPNode *p_tree, void *p_base_node_addr, 
 	if (p_tree->IsLeaf())
 	{
 		// Set face index array pointer
-		int face_idx = (int) p_tree->m_leaf.mp_face_idx_array;
+		uintptr_t face_idx = (uintptr_t) p_tree->m_leaf.mp_face_idx_array;
 		p_tree->m_leaf.mp_face_idx_array = (FaceIndex *) p_base_face_idx_addr;
 		p_tree->m_leaf.mp_face_idx_array += face_idx;
 
@@ -523,7 +621,7 @@ bool	CCollObjTriData::s_init_tree(CCollBSPNode *p_tree, void *p_base_node_addr, 
 	} else {
 		Dbg_MsgAssert(p_tree->GetSplitAxis() < 3, ("BSP split axis is %d", p_tree->GetSplitAxis()));
 		// Set branch pointers
-		p_tree->m_node.m_children.SetBasePointer((CCollBSPNode *)((int) p_tree->m_node.m_children.GetBasePointer() + (int) p_base_node_addr));
+		p_tree->m_node.m_children.SetBasePointer((CCollBSPNode *)((uintptr_t) p_tree->m_node.m_children.GetBasePointer() + (uintptr_t) p_base_node_addr));
 
 		// And init branches
 		s_init_tree(p_tree->GetLessBranch(), p_base_node_addr, p_base_face_idx_addr);

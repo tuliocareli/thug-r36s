@@ -2844,7 +2844,16 @@ bool ScriptChangeLevel(Script::CStruct *pParams, Script::CScript *pScript)
 	// so we need to send it immediately
 	if ( ! gamenet_man->InNetGame())
 	{
-		server->SendData();		// Mick, (true) because we want to send it immediatly
+#ifdef __PLAT_VITA__
+		if (vita_n_dest == 0)
+		{
+			Skate::Instance()->ChangeLevel( level );
+		}
+		else
+#endif
+		{
+			server->SendData();		// Mick, (true) because we want to send it immediatly
+		}
 	}
 	
 	return true;

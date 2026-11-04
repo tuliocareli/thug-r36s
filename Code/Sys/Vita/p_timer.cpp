@@ -16,6 +16,8 @@
 
 #include <psp2/kernel/processmgr.h>
 
+namespace NxVita { extern int g_vita_cadence; }
+
 namespace Tmr
 {
 
@@ -147,13 +149,26 @@ void	OncePerRender()
 		uncapped_total += d;
 		if(( d > 10.0f ) || ( d < 0.0f ))	// valeurs aberrantes (chargement)
 			d = 1.0f;
+#if defined(__PLAT_LINUX__)
+		if( d > 6.0f )
+			d = 6.0f;
+#else
 		if( d > 4.0f )
 			d = 4.0f;
+#endif
 		total += d;
 	}
 	float render_length = total / (float)vSMOOTH_N;
+#if defined(__PLAT_LINUX__)
+	// Fluidite naturelle 60 FPS (1.0 vblank) sans forcer de palier 30 FPS saccade
 	if( render_length < 1.0f )
 		render_length = 1.0f;
+	else if( render_length > 6.0f )
+		render_length = 6.0f;
+#else
+	if( render_length < 1.0f )
+		render_length = 1.0f;
+#endif
 
 	s_frame_length    = render_length / 60.0f;
 	s_uncapped_length = ((double)uncapped_total / (double)vSMOOTH_N ) / 60.0;

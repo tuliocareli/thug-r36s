@@ -1,11 +1,11 @@
 /*****************************************************************************
-**  THUG-Vita — backend VitaGL                                              **
+**  THUG-Vita â backend VitaGL                                              **
 **  Code/Gfx/Vita/p_nx_managers.cpp                                         **
 **                                                                          **
-**  Stubs des gestionnaires de la couche Nx : lumières, brouillard, écran   **
+**  Stubs des gestionnaires de la couche Nx : lumiÃ¨res, brouillard, Ã©cran   **
 **  de chargement, dictionnaires de textures, sprites, imposteurs, fontes.  **
 **                                                                          **
-**  GÉNÉRÉ par vita/tools/gen_stubs.py. Voir p_nx.cpp pour la démarche.     **
+**  GÃNÃRÃ par vita/tools/gen_stubs.py. Voir p_nx.cpp pour la dÃ©marche.     **
 *****************************************************************************/
 
 #include <gfx/nx.h>
@@ -82,8 +82,8 @@ bool	CLightManager::s_plat_set_light_diffuse_color(int light_index)
 // Ces trois lecteurs RENDAIENT DU VIDE alors que le moteur venait de ranger la
 // valeur juste a cote (NxLightMan.cpp:110, 135, 160 : le setter generique
 // ecrit dans s_world_lights, PUIS appelle la version plateforme). Rendre
-// Image::RGBA() ne disait pas « je ne sais pas », il disait « l'ambiante est
-// noire et la diffuse aussi » -- a tout le moteur, pour toujours.
+// Image::RGBA() ne disait pas Â« je ne sais pas Â», il disait Â« l'ambiante est
+// noire et la diffuse aussi Â» -- a tout le moteur, pour toujours.
 //
 // C'est la meme erreur que les stubs qui renvoient false : un accesseur sans
 // specificite plateforme doit rendre la donnee, pas un objet vide.
@@ -110,7 +110,7 @@ Image::RGBA	CLightManager::s_plat_get_light_diffuse_color(int light_index)
 // classe derivee est le moyen prevu d'y acceder -- et il faut y acceder, car
 // c'est par la que passe la silhouette noire : les cinematiques appellent
 // GetModelLights()->SetBrightness( 0.0f ) (cutscenedetails.cpp:4732, commente
-// « turn off skater brightness, so that it matches the other objects »).
+// Â« turn off skater brightness, so that it matches the other objects Â»).
 //
 // La formule (NxLight.cpp:218) est
 //     brightness_ambiante = 1 + ( 2 x brightness - 1 ) x modulation
@@ -123,8 +123,8 @@ CModelLights *	CLightManager::s_plat_create_model_lights()
 
 bool	CLightManager::s_plat_free_model_lights(CModelLights *p_model_lights)
 {
-	VITA_STUB();
-	return false;
+	delete p_model_lights;
+	return true;
 }
 
 // Brouillard (issue #45) : meme contrat que XBox/p_nxmiscfx.cpp:1177-1275.
@@ -242,7 +242,7 @@ void VitaDessineEcranChargementSiActif( void )
 
 void	CLoadScreen::s_plat_display(const char *filename, bool just_freeze, bool blank)
 {
-	// « just_freeze » : garder a l'ecran ce qui s'y trouve deja.
+	// Â« just_freeze Â» : garder a l'ecran ce qui s'y trouve deja.
 	if( just_freeze )
 		return;
 
@@ -261,7 +261,7 @@ void	CLoadScreen::s_plat_display(const char *filename, bool just_freeze, bool bl
 	}
 
 	// On passe par CTexture::LoadTexture et NON par le chargeur directement :
-	// c'est cette couche qui prefixe « images/ » et ajoute « .img.xbx ». La
+	// c'est cette couche qui prefixe Â« images/ Â» et ajoute Â« .img.xbx Â». La
 	// court-circuiter donne un fichier introuvable, en silence.
 	Nx::CVitaTexture *p_tex = new Nx::CVitaTexture;
 	if( !p_tex->LoadTexture( filename, true, false ))
@@ -289,8 +289,8 @@ void	CLoadScreen::s_plat_display(const char *filename, bool just_freeze, bool bl
 // contenu un vglSwapBuffers de trop. Justifie au palier 2, quand l'ecran de
 // chargement etait seul capable de presenter quoi que ce soit, il ajoutait
 // depuis s_plat_post_render un second swap en milieu de frame -- presentant
-// un tampon ne contenant que l'effacement, d'ou le � plan noir sur fond
-// bleu �. Le swap ci-dessus est different : il presente une IMAGE.
+// un tampon ne contenant que l'effacement, d'ou le « plan noir sur fond
+// bleu ». Le swap ci-dessus est different : il presente une IMAGE.
 
 void	CLoadScreen::s_plat_start_loading_bar(float seconds)
 {
@@ -316,8 +316,8 @@ void	CLoadScreen::s_plat_clear()
 	VITA_STUB();
 
 	// Premier vrai rendu du portage : effacer le framebuffer.
-	// Bleu nuit plutôt que noir, pour distinguer « le moteur efface » de
-	// « rien ne se passe » — un écran noir est ambigu.
+	// Bleu nuit plutÃ´t que noir, pour distinguer Â« le moteur efface Â» de
+	// Â« rien ne se passe Â» â un Ã©cran noir est ambigu.
 	glClearColor( 0.0f, 0.0f, 0.25f, 1.0f );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 }
@@ -328,16 +328,16 @@ CTexDict *	CTexDictManager::s_plat_load_texture_dictionary(const char *p_tex_dic
 
 	// Dictionnaire VIDE mais VALIDE, pas NULL.
 	//
-	// Le palier 3 veut la géométrie sans les textures : le moteur a besoin
-	// d'un dictionnaire pour continuer à charger une scène, mais pas encore
-	// de son contenu. CTexDict a justement un constructeur documenté
-	// « loads nothing » (NxTexture.h:164) — c'est exactement ce cas.
+	// Le palier 3 veut la gÃ©omÃ©trie sans les textures : le moteur a besoin
+	// d'un dictionnaire pour continuer Ã  charger une scÃ¨ne, mais pas encore
+	// de son contenu. CTexDict a justement un constructeur documentÃ©
+	// Â« loads nothing Â» (NxTexture.h:164) â c'est exactement ce cas.
 	//
-	// Rendre NULL bloquait le chargement : c'est ce qui arrêtait le moteur
-	// juste après les 60 squelettes.
+	// Rendre NULL bloquait le chargement : c'est ce qui arrÃªtait le moteur
+	// juste aprÃ¨s les 60 squelettes.
 	// Vrai chargement depuis le .tex.xbx.
 	CVitaTexDict *p_dict = new CVitaTexDict( p_tex_dict_name );
-	p_dict->m_vita_liberable = isSkin;
+	p_dict->m_vita_liberable = !is_level_data || isSkin;
 	return p_dict;
 }
 
@@ -348,7 +348,7 @@ CTexDict *	CTexDictManager::s_plat_load_texture_dictionary(uint32 checksum, uint
 	// d'interface, d'ou l'importance de ne PAS se contenter d'un objet vide.
 	CVitaTexDict *p_dict = new CVitaTexDict( checksum );
 	LoadVitaTextureMemory( pData, p_dict->GetTexLookup());
-	p_dict->m_vita_liberable = isSkin;
+	p_dict->m_vita_liberable = !is_level_data || isSkin;
 	return p_dict;
 }
 
@@ -369,9 +369,21 @@ void VitaLibererDifferes( void )
 {
 	if( s_nb_dicts_differes )
 	{
+#if !defined(__PLAT_LINUX__)
 		glFinish();
+#endif
 		for( int i = 0; i < s_nb_dicts_differes; ++i )
-			delete sp_dicts_differes[i];
+		{
+			CVitaTexDict *p_dict = sp_dicts_differes[i];
+			sp_dicts_differes[i] = NULL;
+			if( p_dict )
+			{
+				for( int j = i + 1; j < s_nb_dicts_differes; ++j )
+					if( sp_dicts_differes[j] == p_dict )
+						sp_dicts_differes[j] = NULL;
+				delete p_dict;
+			}
+		}
 		s_nb_dicts_differes = 0;
 	}
 	VitaLibererMeshDifferes();
@@ -379,12 +391,38 @@ void VitaLibererDifferes( void )
 
 }	// namespace Nx
 
+void NxVita::RetirerDictEnAttente( Nx::CVitaTexDict *p_dict )
+{
+	if( !p_dict )
+		return;
+	for( int i = 0; i < Nx::s_nb_dicts_attente; ++i )
+	{
+		if( Nx::sp_dicts_attente[i] == p_dict )
+			Nx::sp_dicts_attente[i] = NULL;
+	}
+	for( int i = 0; i < Nx::s_nb_dicts_differes; ++i )
+	{
+		if( Nx::sp_dicts_differes[i] == p_dict )
+			Nx::sp_dicts_differes[i] = NULL;
+	}
+}
+
 void NxVita::LibererDictsEnAttente( void )
 {
 	if( Nx::s_nb_dicts_attente )
 		VLOG( "TEX", "%d dictionnaires de niveau detruits", Nx::s_nb_dicts_attente );
 	for( int i = 0; i < Nx::s_nb_dicts_attente; ++i )
-		delete Nx::sp_dicts_attente[i];
+	{
+		Nx::CVitaTexDict *p_dict = Nx::sp_dicts_attente[i];
+		Nx::sp_dicts_attente[i] = NULL;
+		if( p_dict )
+		{
+			for( int j = i + 1; j < Nx::s_nb_dicts_attente; ++j )
+				if( Nx::sp_dicts_attente[j] == p_dict )
+					Nx::sp_dicts_attente[j] = NULL;
+			delete p_dict;
+		}
+	}
 	Nx::s_nb_dicts_attente = 0;
 }
 
@@ -416,17 +454,27 @@ bool	CTexDictManager::s_plat_unload_texture_dictionary(CTexDict *p_tex_dict)
 		return false;
 	if( p_vita->m_vita_liberable || NxVita::MondeVide())
 	{
-		// #48 : en pleine image, pas de glFinish (il coupe la scene) : file.
-		if( g_vita_image_ouverte && g_vita_differer_lib && ( s_nb_dicts_differes < MAX_DICTS_ATTENTE ))
+		NxVita::RetirerDictEnAttente( p_vita );
+		if( g_vita_image_ouverte && g_vita_differer_lib )
 		{
-			sp_dicts_differes[s_nb_dicts_differes++] = p_vita;
-			VitaCompterFinishEvite();
-			return true;
+			for( int i = 0; i < s_nb_dicts_differes; ++i )
+				if( sp_dicts_differes[i] == p_vita )
+					return true;
+			if( s_nb_dicts_differes < MAX_DICTS_ATTENTE )
+			{
+				sp_dicts_differes[s_nb_dicts_differes++] = p_vita;
+				VitaCompterFinishEvite();
+				return true;
+			}
 		}
-		glFinish();		// textures peut-etre encore lues : voir s_plat_finish_rendering
+#if !defined(__PLAT_LINUX__)
+		glFinish();
+#endif
 		delete p_vita;
 		return true;
 	}
+	for( int i = 0; i < s_nb_dicts_attente; ++i )
+		if( sp_dicts_attente[i] == p_vita ) return true;
 	if( s_nb_dicts_attente < MAX_DICTS_ATTENTE )
 		sp_dicts_attente[s_nb_dicts_attente++] = p_vita;
 	else

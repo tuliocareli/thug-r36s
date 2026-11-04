@@ -110,8 +110,8 @@ private:
 		CCollBSPNode *	GetGreaterBranch() const { return IsLeftGreater() ? GetLeftBranch() : GetRightBranch(); }
 
 		// These two are needed for the cloning function
-		CCollBSPNode *	GetBasePointer() const { return (CCollBSPNode *) (m_left_child_and_flags & ~0x3); }
-		void			SetBasePointer(CCollBSPNode *p_base) { m_left_child_and_flags = ((uint32) p_base) | (m_left_child_and_flags & 0x3); }
+		CCollBSPNode *	GetBasePointer() const { return (CCollBSPNode *) (m_left_child_and_flags & ~((uintptr_t)0x3)); }
+		void			SetBasePointer(CCollBSPNode *p_base) { m_left_child_and_flags = ((uintptr_t) p_base) | (m_left_child_and_flags & 0x3); }
 
 		bool			IsLeftGreater() const { return m_left_child_and_flags & mLEFT_IS_GREATER; }
 		void			SetLeftGreater(bool greater);
@@ -124,7 +124,7 @@ private:
 			mLEFT_IS_GREATER = 0x01,			// Indicates that the left branch is the greater branch
 		};
 
-		uint32			m_left_child_and_flags; // points to left branch, right branch one node over
+		uintptr_t		m_left_child_and_flags; // points to left branch, right branch one node over
 	};		
 
 protected:
@@ -211,9 +211,47 @@ public:
 #endif
 	};
 
+#pragma pack(push, 1)
+	struct SDiskBSPNode
+	{
+		union {
+			struct {
+				int32	m_split_point;
+				uint32	m_left_child_and_flags;
+			} node;
+			struct {
+				uint8	m_split_axis;
+				uint8	m_pad1;
+				uint16	m_num_faces;
+				uint32	m_face_idx_offset;
+			} leaf;
+		};
+	};
+
+	struct SDiskCollObjTriData
+	{
+		uint32		m_checksum;
+		uint16		m_Flags;
+		uint16		m_num_verts;
+		uint16		m_num_faces;
+		uint8		m_use_face_small;
+		uint8		m_use_fixed_verts;
+		uint32		m_faces_offset;
+		Mth::CBBox	m_bbox;
+		uint32		m_vert_offset;
+		uint32		m_bsp_offset;
+		uint32		m_intensity_offset;
+		uint32		m_pad1;
+	};
+#pragma pack(pop)
+
 	//
 						CCollObjTriData();
 						~CCollObjTriData();
+
+	static CCollBSPNode * s_deserialize_bsp_tree(const void *p_disk_node_addr, uint32 node_array_size, void *p_base_face_idx_addr, int &out_num_nodes);
+	bool				Deserialize(const SDiskCollObjTriData &disk_obj, void *p_base_vert_addr, void *p_base_intensity_addr,
+									void *p_base_face_addr, CCollBSPNode *p_runtime_nodes, int num_runtime_nodes);
 
 	bool				InitCollObjTriData(CScene * p_scene, void *p_base_vert_addr, void *p_base_intensity_addr, // Init collision sector after read from file
 										   void *p_base_face_addr, void *p_base_node_addr, void *p_base_face_idx_addr);
@@ -658,6 +696,8 @@ inline const unsigned char CCollObjTriData::GetVertexIntensity(int face_idx, int
 inline const unsigned char CCollObjTriData::GetVertexIntensity(int vert_idx) const
 {
 #ifdef FIXED_POINT_VERTICES
+	if (!mp_intensity)
+		return 128;
 	return mp_intensity[vert_idx];
 	//if (m_use_fixed_verts)
 	//{

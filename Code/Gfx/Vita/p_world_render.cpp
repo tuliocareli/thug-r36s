@@ -1,5 +1,5 @@
 /*****************************************************************************
-**  THUG-Vita — backend graphique                                            **
+**  THUG-Vita Ã¢â‚¬â€� backend graphique                                            **
 **  Code/Gfx/Vita/p_world_render.cpp                                        **
 **                                                                          **
 **  Rendu de la geometrie de niveau. Critere du palier 3 : de la geometrie  **
@@ -52,15 +52,15 @@ namespace NxVita
 
 // Voir p_NxModel.h. Commence a 1 : un lot neuf (cache_gen = 0) n'a pas de cache.
 unsigned int g_vita_gen_actif = 1;
-// � sma 0/1 � : test alpha seulement la ou il peut retirer un pixel.
+// Â« sma 0/1 Â» : test alpha seulement la ou il peut retirer un pixel.
 bool g_vita_seuil_malin = true;
 unsigned int g_vita_gen_pre = 1;
-// � cnd 0/1 � : listes de dessin construites depuis les seuls candidats.
+// Â« cnd 0/1 Â» : listes de dessin construites depuis les seuls candidats.
 bool g_vita_cand_listes = true;
-// � gxs 0/1 � : maillages translucides seuls en GXM direct (issue #18).
+// Â« gxs 0/1 Â» : maillages translucides seuls en GXM direct (issue #18).
 bool g_vita_gxm_seuls = true;
 static int s_transp_gxm = 0;
-// � gxt 0/1 � : translucides que gxs/env/uvw laissent a vitaGL -- materiaux a
+// Â« gxt 0/1 Â» : translucides que gxs/env/uvw laissent a vitaGL -- materiaux a
 // UNE couche (decalques a z-bias, couleurs animees...) et toute la passe
 // triee -- en GXM direct (issue #18). Voir RenderWorld.
 bool g_vita_gxm_transp = true;	// valide le 2026-10-03, humain devant la console : NJ V1 transp 3,37 -> 1,65 ms, decor identique, 3 changements de niveau sans plantage
@@ -79,7 +79,7 @@ static int s_rx[RX_N];
 // Attributs des maillages a une couche restes sur vitaGL (non exclusifs).
 static int s_rx_zbias = 0, s_rx_vcw = 0, s_rx_lot = 0, s_rx_test = 0,
            s_rx_fixe = 0, s_rx_iva = 0, s_rx_tri = 0;
-// � plc 0/1 � : cache du parcours des plages des lots (issue #18).
+// Â« plc 0/1 Â» : cache du parcours des plages des lots (issue #18).
 bool g_vita_cache_plages = true;
 
 // ETAT PAR DEFAUT : TOUTES LES ADDITIONS DE LA SESSION SONT A L'ARRET.
@@ -100,7 +100,7 @@ bool g_vita_cache_plages = true;
 //     sl     ciel dessine en dernier
 //     iva    alpha des sommets ignore quand le materiau le demande
 //
-// Ne PAS remettre l'une d'elles a � true � par defaut avant qu'elle ait ete
+// Ne PAS remettre l'une d'elles a Â« true Â» par defaut avant qu'elle ait ete
 // jugee a l'ecran. Un mecanisme conforme au source n'est pas un rendu correct.
 
 
@@ -163,8 +163,8 @@ struct SWorldMesh
 	unsigned short mesh_no;
 	// Scene DICTIONNAIRE (bibliotheque de pieces de l'editeur de parc) :
 	// jamais dessinee a sa place, seulement par ses clones.
-	// [SOURCE] XBox/NX/render.cpp:2474, render_scene : � Don't render
-	// dictionary scenes �. Son secteur est relie a un etat eteint fixe
+	// [SOURCE] XBox/NX/render.cpp:2474, render_scene : Â« Don't render
+	// dictionary scenes Â». Son secteur est relie a un etat eteint fixe
 	// (p_nx.cpp), ce qui l'ecarte de tous les chemins de dessin du decor.
 	bool          dico;
 	float         sect_bb[6];
@@ -196,7 +196,7 @@ struct SWorldMesh
 	// Passes 2 et 3 (option B, etape 3, issue #6). texture_x = 0 : absente.
 	GLuint	texture_x[2], uvbo_x[2];
 	// Passe 2 ou 3 en REFLET (issue #72) : sa texture (texture_x reste 0),
-	// son tuilage. Dessinee par materiau_env_prepare seulement (� epx �).
+	// son tuilage. Dessinee par materiau_env_prepare seulement (Â« epx Â»).
 	GLuint	texture_envx[2];
 	float	env_tile_x[2][2];
 	unsigned int mat_checksum;
@@ -209,16 +209,16 @@ struct SWorldMesh
 	unsigned int blend_x[2], flags_x[2];
 	unsigned char addr_xu[2], addr_xv[2];
 	// Ce maillage est-il absorbe par un lot fusionne ? Si oui, il n'est plus
-	// dessine individuellement quand � fus 1 � est actif.
+	// dessine individuellement quand Â« fus 1 Â» est actif.
 	bool	dans_lot;
-	// Absorbe par un lot A Z-BIAS (issue #69, � zbl �) : dans_lot suit alors
+	// Absorbe par un lot A Z-BIAS (issue #69, Â« zbl Â») : dans_lot suit alors
 	// la bascule, le lot restant construit dans les deux cas.
 	bool	lot_zb;
 	// Le CIEL se dessine autrement : voir RenderWorld.
 	bool	is_sky;
 	// z-bias du materiau, 0-16 (issue #36, XBox/NX/material.cpp:615). Non
 	// nul : decalque, dessine avec un decalage de profondeur ; regroupe en lot
-	// seulement avec � zbl 1 � (issue #69, lot a z-bias commun).
+	// seulement avec Â« zbl 1 Â» (issue #69, lot a z-bias commun).
 	unsigned char zbias;
 	// Double face (issue #38) : pas de culling des faces arriere.
 	unsigned char no_bfc;
@@ -242,24 +242,28 @@ struct SWorldMesh
 	// Non nul : jamais regroupe en lot ; les 4 positions sont recrites EN
 	// PLACE dans vbo a chaque image, face a la camera (bb_mettre_a_jour).
 	SVitaBillboard *p_bb;
-	// Billboard pris dans un LOT (issue #69, � bbl �) : lot_bb, et l'indice
+	// Billboard pris dans un LOT (issue #69, Â« bbl Â») : lot_bb, et l'indice
 	// de chacun de ses 4 sommets dans le vbo du lot (-1 : non copie).
 	// bb_mettre_a_jour les recrit la AUSSI, en plus de son propre vbo (que
-	// gardent la passe triee, les clones et � bbl 0 �). dans_lot suit alors
+	// gardent la passe triee, les clones et Â« bbl 0 Â»). dans_lot suit alors
 	// la bascule, comme pour les lots a z-bias.
 	bool	lot_bb;
 	int		bb_lot_v[4];
 };
 
 // "vcw 0/1" (p_siodev.cpp), voir vcw_mettre_a_jour. Issue #45 V2.
-bool g_vita_vcw = true;	// valide le 2026-10-03 : enseigne SPEED SHOP (NJ), meme clignotement que xemu
+#if defined(__PLAT_LINUX__)
+bool g_vita_vcw = false; // Desativa animacao de cores de sommets na CPU para economizar tempo de quadro
+#else
+bool g_vita_vcw = true;
+#endif
 
 // Derniere matrice de vue calculee. Les modeles la reprennent telle quelle :
 // sans cela ils seraient dessines dans un autre repere que le decor.
 static float s_view[16];
 static bool  s_view_valid = false;
 
-// Facteur de zoom du rendu 3D, reglable A CHAUD par la commande « zoom N.NN »
+// Facteur de zoom du rendu 3D, reglable A CHAUD par la commande Ã‚Â« zoom N.NN Ã‚Â»
 // (voir p_siodev.cpp). Chercher la bonne valeur en recompilant a chaque essai
 // coute cinq minutes par pas ; ici, c'est immediat et l'humain devant la
 // console peut balayer l'intervalle lui-meme.
@@ -271,7 +275,7 @@ static bool  s_view_valid = false;
 // outil de diagnostic.
 float g_vita_world_zoom = 1.0f;
 
-// Culling debrayable a chaud (� cull 0 � / � cull 1 �). Depuis l'ajout de la
+// Culling debrayable a chaud (Â« cull 0 Â» / Â« cull 1 Â»). Depuis l'ajout de la
 // passe de ciel, le decor n'apparait plus que dans un rayon proche : ce
 // commutateur dit en une manipulation si le test de visibilite est en cause,
 // ou si les maillages se perdent ailleurs dans la boucle.
@@ -280,8 +284,8 @@ bool g_vita_cull = true;
 // Dessin du ciel : COUPE par defaut, et c'est un aveu, pas un choix.
 //
 // Ce qui est ETABLI par la mesure :
-//   - avec � sky 1 � les personnages portent la texture du ciel ;
-//   - avec � sky 0 � ils retrouvent la leur, immediatement, sans rien d'autre
+//   - avec Â« sky 1 Â» les personnages portent la texture du ciel ;
+//   - avec Â« sky 0 Â» ils retrouvent la leur, immediatement, sans rien d'autre
 //     de change. La passe du ciel laisse donc bien un etat derriere elle.
 //
 // Ce qui a ete essaye SANS SUCCES : restaurer, a la sortie de cette passe, la
@@ -299,7 +303,7 @@ bool g_vita_cull = true;
 // Intersection ciel n personnages : VIDE. Intersection ciel n decor : VIDE.
 // Aucun maillage ne pointe donc sur une texture du ciel.
 //
-// [VERIFIE] au meme moment : avec � sky 1 � sur un niveau exterieur, les
+// [VERIFIE] au meme moment : avec Â« sky 1 Â» sur un niveau exterieur, les
 // personnages portent leurs BONNES textures (capture d'ecran a l'appui). Le
 // defaut d'origine ne se reproduit plus -- il a ete corrige indirectement,
 // probablement par l'un des nettoyages d'etat GL de cette session.
@@ -308,13 +312,13 @@ bool g_vita_cull = true;
 // (niveau nocturne), ou pas dessine du tout ? Un compteur repond dans la
 // boucle de rendu ci-dessous.
 
-// LE CIEL EST DESSINE. Ce drapeau etait reste a � false � -- un interrupteur
+// LE CIEL EST DESSINE. Ce drapeau etait reste a Â« false Â» -- un interrupteur
 // de diagnostic oublie a l'arret. Sa texture etait chargee, la scene NJ_Sky
 // enregistree, et chaque maillage de ciel saute a chaque image.
 //
 // Ce qu'il a coute : le tampon efface (0,0,38) etait a trois unites du ciel
 // nocturne de New Jersey. Tout ce qui apparaissait au travers des surfaces
-// translucides a ete pris pour � la skybox vue au travers �, mesures a
+// translucides a ete pris pour Â« la skybox vue au travers Â», mesures a
 // l'appui, et a nourri des heures d'hypotheses sur l'ordre des passes,
 // l'ecriture de profondeur et la composition des couches. Il n'y avait pas de
 // ciel : il y avait du vide.
@@ -329,11 +333,11 @@ bool g_vita_sky = true;
 // niveau declarent 2 a 4 passes, dont 65 en BLEND_PREVIOUS_MASK -- un mode qui
 // n'a de sens qu'en multi-passes. Reste a savoir si CE maillage-la en est.
 //
-// Se regle a chaud par la commande � mp 1 � (voir p_siodev.cpp) : recompiler
+// Se regle a chaud par la commande Â« mp 1 Â» (voir p_siodev.cpp) : recompiler
 // pour chaque essai coute cinq minutes, la commande coute une seconde.
 bool g_vita_mat_debug = false;
 
-// � op 1 � : force TOUT le decor dans la passe opaque, en ignorant le blend
+// Â« op 1 Â» : force TOUT le decor dans la passe opaque, en ignorant le blend
 // mode du materiau.
 //
 // Ce que ce test departage. Un maillage classe translucide est dessine dans la
@@ -350,12 +354,12 @@ bool g_vita_force_opaque = false;
 // Interrupteurs des trois corrections du pipeline, reglables a chaud. Chacune
 // touche un point different ; pouvoir les isoler sans recompiler evite de
 // chercher laquelle a mal tourne quand l'image change sur trois plans a la
-// fois. Commandes : � tflag 0/1 �, � zwr 0/1 �, � atest 0/1 �.
+// fois. Commandes : Â« tflag 0/1 Â», Â« zwr 0/1 Â», Â« atest 0/1 Â».
 //
 // [A] Classement semi-transparent sur MATFLAG_TRANSPARENT (XBox/NX/scene.cpp:234)
-//     au lieu de � blend != 0 �. 68 materiaux de New Jersey changent de camp.
+//     au lieu de Â« blend != 0 Â». 68 materiaux de New Jersey changent de camp.
 bool g_vita_transp_flag = true;	// Xbox, par defaut depuis le 2026-09-27 (arbre recouvert par la fenetre derriere lui)
-// [E] � bop 0/1 � : materiau OPAQUE (sans MATFLAG_TRANSPARENT) dont la passe 0
+// [E] Â« bop 0/1 Â» : materiau OPAQUE (sans MATFLAG_TRANSPARENT) dont la passe 0
 //     a un mode de melange. XBox le garde dans l'etage opaque (scene.cpp:234)
 //     mais l'y dessine AVEC ce melange : ALPHABLENDENABLE reste vrai en
 //     permanence (nx_init.cpp:54) et sMaterial::Submit pose
@@ -381,9 +385,9 @@ static inline bool melange_hors_drapeau( unsigned int blend, unsigned int flags0
 //     dans l'etage semi-transparent -- verifie : les seuls RS_ZWRITEENABLE 0
 //     du fichier concernent les volumes d'ombre et les ombres portees.
 bool g_vita_zwrite_transp = true;	// Xbox, par defaut depuis le 2026-09-27 (arbre recouvert par la fenetre derriere lui)
-// [F] � zeq 0/1 � : test de profondeur du decor. XBox pose D3DCMP_LESSEQUAL
+// [F] Â« zeq 0/1 Â» : test de profondeur du decor. XBox pose D3DCMP_LESSEQUAL
 //     une fois pour toutes (XBox/NX/nx_init.cpp:48 ; render.cpp:2455 le
-//     remet apres les volumes d'ombre) ; nous posions GL_LESS (� test strict �,
+//     remet apres les volumes d'ombre) ; nous posions GL_LESS (Â« test strict Â»,
 //     jamais confronte a la reference). Seule difference : deux maillages
 //     SUPERPOSES -- memes sommets, donc meme profondeur au bit pres. C'est
 //     ainsi que l'exporteur decoupe certains materiaux multi-passes : materiau
@@ -413,7 +417,7 @@ bool g_vita_alpha_test = true;	// Xbox, par defaut depuis le 2026-09-27 (arbre r
 // mais son mode de combinaison n'a jamais ete confronte au shader XBox couche
 // par couche -- c'est le suspect designe quand des surfaces s'assombrissent.
 // [A REJUGER, AVEC CIEL] Deuxieme couche de texture. Son premier verdict --
-// � ca casse les reflets et les transparences � -- a ete rendu alors que le
+// Â« ca casse les reflets et les transparences Â» -- a ete rendu alors que le
 // ciel n'etait pas dessine : les surfaces translucides se melangeaient avec du
 // vide, aucun reglage ne pouvait donner un resultat correct.
 //
@@ -431,19 +435,19 @@ bool g_vita_multitex = true;
 // connu, tout le reste -- materiau, drapeaux, secteur, indices -- se lit sur
 // table dans le fichier du niveau.
 //
-// � id 1 � l'arme. Les surfaces qui restent NOIRES sous ce mode sont celles
+// Â« id 1 Â» l'arme. Les surfaces qui restent NOIRES sous ce mode sont celles
 // qu'aucun maillage ne couvre : c'est en soi une reponse.
 bool g_vita_id_debug = false;
 
-// ORDRE DES PASSES. � skylast 1 � (defaut) dessine le ciel EN DERNIER, comme
-// XBox ; � skylast 0 � revient a l'ancien ordre, ciel en premier.
+// ORDRE DES PASSES. Â« skylast 1 Â» (defaut) dessine le ciel EN DERNIER, comme
+// XBox ; Â« skylast 0 Â» revient a l'ancien ordre, ciel en premier.
 //
 // Pourquoi ce changement. Le fond du bassin de New Jersey n'a AUCUN maillage
 // opaque : il est fait de couches translucides superposees (maillages 2472 et
 // 2494, blend 5, MATFLAG_TRANSPARENT, draw_order ~1500 -- releve par la
-// commande � info �). Avec le ciel peint EN PREMIER, ces couches se melangent
+// commande Â« info Â»). Avec le ciel peint EN PREMIER, ces couches se melangent
 // par-dessus lui : a alpha faible, c'est le ciel qui l'emporte, et le sol
-// s'affiche bleu nuit. Meme mecanisme pour les � arches � du muret (3496).
+// s'affiche bleu nuit. Meme mecanisme pour les Â« arches Â» du muret (3496).
 //
 // XBox dessine le ciel A LA FIN, a l'infini, test de profondeur actif
 // (render.cpp:1810, render_at_infinity). Comme il n'eteint jamais l'ecriture
@@ -455,7 +459,7 @@ bool g_vita_id_debug = false;
 // [A JUGER A L'ECRAN] ordre du ciel : au milieu (XBox) plutot qu'en premier.
 // Changement d'ORDRE pur -- aucun nouvel etat GL, donc sans le risque
 // d'interaction qui a fait echouer le test alpha.
-// Remis a l'arret : ce reglage a ete � juge � alors que le ciel n'etait pas
+// Remis a l'arret : ce reglage a ete Â« juge Â» alors que le ciel n'etait pas
 // dessine du tout. Le verdict ne vaut rien, et un reglage non valide reste
 // eteint. A rejuger maintenant qu'il y a un ciel derriere les translucides.
 bool g_vita_sky_last = false;
@@ -468,17 +472,17 @@ bool g_vita_sky_last = false;
 // meme tampon de couleurs avec size=3 et stride=4. GL prend alors R, G, B et
 // pose alpha = 1. La couleur cuite du decor est conservee, son alpha ignore.
 //
-// � iva 0 � revient au comportement precedent.
+// Â« iva 0 Â» revient au comportement precedent.
 bool g_vita_ignore_vertex_alpha = false;
 
-// TRI PAR PROFONDEUR des translucides que le materiau marque � tries �.
+// TRI PAR PROFONDEUR des translucides que le materiau marque Â« tries Â».
 //
 // [SOURCE] XBox/NX/render.cpp:2717 : la clef est -z_vue - rayon, triee en
 // ordre CROISSANT, donc du plus lointain au plus proche -- l'ordre juste pour
 // le melange alpha. Le signe fait tout le travail : sans lui on lirait
 // l'inverse.
 //
-// 24 materiaux de New Jersey portent ce drapeau. � dpt 0 � remet ces maillages
+// 24 materiaux de New Jersey portent ce drapeau. Â« dpt 0 Â» remet ces maillages
 // dans la passe translucide ordinaire, sans tri.
 bool g_vita_tri_profondeur = true;
 
@@ -499,7 +503,7 @@ bool g_vita_tri_profondeur = true;
 // La reference ne s'y prend pas autrement : elle construit un visible_mesh_array
 // (XBox/NX/render.cpp:2497) plutot que de rebalayer la scene.
 //
-// � prep 0 � reconstruit les listes a chaque passe au lieu d'une fois par
+// Â« prep 0 Â» reconstruit les listes a chaque passe au lieu d'une fois par
 // image : le meme code, quatre fois plus de parcours. C'est ce qui permet de
 // mesurer le gain A CHAUD, sans changer de binaire ni de scene.
 bool g_vita_prepasse = true;
@@ -518,7 +522,7 @@ bool g_vita_prepasse = true;
 // La grille n'est pas une contrainte de correction mais un choix : elle garde
 // un culling grossier la ou une fusion globale le supprimerait.
 //
-// � fus 0 � revient au dessin maillage par maillage.
+// Â« fus 0 Â» revient au dessin maillage par maillage.
 //
 // ALLUME PAR DEFAUT depuis que le rendu a ete verifie identique a l'ecran
 // et le gain mesure : monde 22,0 -> 13,8 ms a camera et charge egales.
@@ -564,7 +568,7 @@ bool g_vita_lots = true;
 //
 // 0 = repetition, 1 = bloque au bord, 2 = bordure. Faute de couleur de
 // bordure en GLES, 2 est traite comme 1 -- le bord est etire au lieu d'etre
-// color�, ce qui reste bien plus proche que de carreler.
+// colorÃ©, ce qui reste bien plus proche que de carreler.
 // Derniere valeur posee, par identifiant de texture : l'adressage est un etat
 // de la TEXTURE, inutile de le reposer quand il n'a pas change. Deux
 // glTexParameteri par dessin et par passe, sinon. 0 = inconnu.
@@ -578,18 +582,20 @@ void OublierAdressage( unsigned int tex )
 		s_adressage_pose[tex] = 0;
 }
 
-static void poser_adressage( unsigned char u, unsigned char v )
+static void poser_adressage( unsigned char u, unsigned char v, GLuint tex = 0 )
 {
+	if( tex == 0 )
 	{
-		GLint tex = 0;
-		glGetIntegerv( GL_TEXTURE_BINDING_2D, &tex );
-		const unsigned char code = (unsigned char)( 1 + (( u ? 1 : 0 ) << 1 ) + ( v ? 1 : 0 ));
-		if(( tex > 0 ) && ( tex < 16384 ))
-		{
-			if( s_adressage_pose[tex] == code )
-				return;
-			s_adressage_pose[tex] = code;
-		}
+		GLint t = 0;
+		glGetIntegerv( GL_TEXTURE_BINDING_2D, &t );
+		tex = (GLuint)t;
+	}
+	const unsigned char code = (unsigned char)( 1 + (( u ? 1 : 0 ) << 1 ) + ( v ? 1 : 0 ));
+	if(( tex > 0 ) && ( tex < 16384 ))
+	{
+		if( s_adressage_pose[tex] == code )
+			return;
+		s_adressage_pose[tex] = code;
 	}
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
 	                 ( u == 0 ) ? GL_REPEAT : GL_CLAMP_TO_EDGE );
@@ -597,7 +603,7 @@ static void poser_adressage( unsigned char u, unsigned char v )
 	                 ( v == 0 ) ? GL_REPEAT : GL_CLAMP_TO_EDGE );
 }
 
-static void poser_masque_precedent( bool inverse )
+static void poser_masque_precedent( bool inverse, GLuint tex2 = 0 )
 {
 	glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE );
 	glTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB,      GL_INTERPOLATE );
@@ -605,35 +611,103 @@ static void poser_masque_precedent( bool inverse )
 	glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR );
 	glTexEnvi( GL_TEXTURE_ENV, GL_SRC1_RGB,     inverse ? GL_TEXTURE : GL_PREVIOUS );
 	glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR );
-	glTexEnvi( GL_TEXTURE_ENV, GL_SRC2_RGB,     GL_PREVIOUS );
-	glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA );
 
-	// L'ALPHA DE SORTIE VIENT DE LA COUCHE 1, PAS DU MASQUE.
-	//
-	// Le masque decide QUELLE MATIERE on voit, pas SI on voit quelque chose.
-	// Sa couche 0 est un pochoir noir dont la forme vit dans l'alpha (mesure
-	// sur la rampe : luminance 1..16, alpha 7..255). Laisser cet alpha partir
-	// au melange avec l'ecran DECOUPE la surface -- la rampe se troue et on
-	// voit le vide derriere, ce que l'humain decrit depuis le debut.
-	//
-	// La couche 1 porte la matiere (beton) et son alpha est plein : la surface
-	// reste donc pleine, et seule sa couleur suit le pochoir.
+	if( tex2 == 0 )
+	{
+		GLint t = 0;
+		glGetIntegerv( GL_TEXTURE_BINDING_2D, &t );
+		tex2 = (GLuint)t;
+	}
+	if(( tex2 > 0 ) && ( tex2 < 16384 ) && ( Nx::g_vita_tex_alpha_min[tex2] < 250 ))
+	{
+		// Masque present dans le canal alpha de la couche courante (GL_TEXTURE)
+		glTexEnvi( GL_TEXTURE_ENV, GL_SRC2_RGB,     GL_TEXTURE );
+		glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA );
+	}
+	else
+	{
+		glTexEnvi( GL_TEXTURE_ENV, GL_SRC2_RGB,     GL_PREVIOUS );
+		glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA );
+	}
+
 	glTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE );
-	glTexEnvi( GL_TEXTURE_ENV, GL_SRC0_ALPHA,     GL_TEXTURE );
+	glTexEnvi( GL_TEXTURE_ENV, GL_SRC0_ALPHA,     GL_PRIMARY_COLOR );
 	glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_ALPHA, GL_SRC_ALPHA );
 }
 
-static GLenum env_mode_pour( unsigned int blend )
+static void poser_env_couche2( unsigned int blend2, const float *c1, GLuint tex2 = 0 )
 {
-	switch( blend )
+	if(( blend2 == 12 ) || ( blend2 == 13 ))
 	{
-		case 5:  case 6:				// BLEND, BLEND_FIXED
-			return GL_DECAL;			// melange par l'alpha de la couche
-		case 12: case 13:				// masques : voir poser_masque_precedent
-		case 1:  case 2:				// ADD, ADD_FIXED
-			return GL_ADD;
-		default:						// DIFFUSE, MODULATE, et le reste
-			return GL_MODULATE;
+		poser_masque_precedent( blend2 == 13, tex2 );
+		return;
+	}
+
+	glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE );
+	glTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_ALPHA,  GL_REPLACE );
+	glTexEnvi( GL_TEXTURE_ENV, GL_SRC0_ALPHA,     GL_PREVIOUS );
+	glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_ALPHA, GL_SRC_ALPHA );
+
+	switch( blend2 )
+	{
+		case 1:  case 2:				// ADD, ADD_FIXED : reflexos e pocas de agua na piscina
+		case 8:  case 9:  case 10:		// MODULATE_FIXED, BRIGHTEN, BRIGHTEN_FIXED
+			glTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB,  GL_ADD );
+			glTexEnvi( GL_TEXTURE_ENV, GL_SRC0_RGB,     GL_PREVIOUS );
+			glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR );
+			glTexEnvi( GL_TEXTURE_ENV, GL_SRC1_RGB,     GL_TEXTURE );
+			glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR );
+			break;
+		case 3:  case 4:				// SUBTRACT, SUB_FIXED : escurecimento suave sem crush preto
+			glTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB,  GL_MODULATE );
+			glTexEnvi( GL_TEXTURE_ENV, GL_SRC0_RGB,     GL_PREVIOUS );
+			glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR );
+			glTexEnvi( GL_TEXTURE_ENV, GL_SRC1_RGB,     GL_TEXTURE );
+			glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR );
+			break;
+		case 5:							// BLEND : lerp(r, t1, t1.a)
+			glTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB,  GL_INTERPOLATE );
+			glTexEnvi( GL_TEXTURE_ENV, GL_SRC0_RGB,     GL_TEXTURE );
+			glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR );
+			glTexEnvi( GL_TEXTURE_ENV, GL_SRC1_RGB,     GL_PREVIOUS );
+			glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR );
+			glTexEnvi( GL_TEXTURE_ENV, GL_SRC2_RGB,     GL_TEXTURE );
+			glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA );
+			break;
+		case 6:							// BLEND_FIXED : lerp(r, t1, c1.a)
+		{
+			float env_col[4] = { 1.0f, 1.0f, 1.0f, 0.5f };
+			if( c1 )
+			{
+				env_col[0] = c1[0];
+				env_col[1] = c1[1];
+				env_col[2] = c1[2];
+				env_col[3] = ( c1[3] < 0.0f ) ? 0.0f : (( c1[3] > 1.0f ) ? 1.0f : c1[3] );
+			}
+			glTexEnvfv( GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, env_col );
+			glTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB,  GL_INTERPOLATE );
+			glTexEnvi( GL_TEXTURE_ENV, GL_SRC0_RGB,     GL_TEXTURE );
+			glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR );
+			glTexEnvi( GL_TEXTURE_ENV, GL_SRC1_RGB,     GL_PREVIOUS );
+			glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR );
+			glTexEnvi( GL_TEXTURE_ENV, GL_SRC2_RGB,     GL_CONSTANT );
+			glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA );
+			break;
+		}
+		case 7:							// MODULATE : r * t1.rgb (multiplicacao pura, sem crush preto)
+		{
+			glTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB,  GL_MODULATE );
+			glTexEnvi( GL_TEXTURE_ENV, GL_SRC0_RGB,     GL_PREVIOUS );
+			glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR );
+			glTexEnvi( GL_TEXTURE_ENV, GL_SRC1_RGB,     GL_TEXTURE );
+			glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR );
+			break;
+		}
+		default:						// DIFFUSE (0), GLOSS_MAP (11) : sans effet
+			glTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB,  GL_REPLACE );
+			glTexEnvi( GL_TEXTURE_ENV, GL_SRC0_RGB,     GL_PREVIOUS );
+			glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR );
+			break;
 	}
 }
 
@@ -677,22 +751,22 @@ static unsigned int s_world_gen  = 0;
 static unsigned int s_cull_gen   = 0xFFFFFFFFu;
 // Candidats du parcours : tout sauf les opaques deja dessines par leur lot
 // (2728 des 4441 maillages de New Jersey). Reconstruit avec le tableau
-// compact, ou quand les reglages qui decident � opaque � changent.
+// compact, ou quand les reglages qui decident Â« opaque Â» changent.
 static int         *sp_cand      = NULL;
 static int          s_cand_n     = 0;
 static int          s_cand_cle   = -1;
 static unsigned int s_cand_gen   = 0xFFFFFFFFu;
-// � ccp 0/1 � : culling compact, pour la mesure A/B.
+// Â« ccp 0/1 Â» : culling compact, pour la mesure A/B.
 bool g_vita_cull_compact = true;
 
-// � info N � : journalise tout ce que le rendu sait du maillage N.
+// Â« info N Â» : journalise tout ce que le rendu sait du maillage N.
 //
 // Complement direct du rendu par identifiant : celui-ci dit QUEL maillage
 // occupe un pixel, celui-la dit CE QU'IL EST. Ensemble ils remplacent les
 // hypotheses par deux faits.
 int g_vita_info_mesh = -1;
 
-// � plan X � : tous les maillages du decor dont la boite coupe le plan
+// Â« plan X Â» : tous les maillages du decor dont la boite coupe le plan
 // vertical x = X (a 20 unites pres), avec ce qui decide de leur dessin. Sert a
 // trouver la geometrie ABSENTE d'une facade : l'identifiant par couleur ne
 // montre que ce qui est dessine.
@@ -716,9 +790,9 @@ void VitaListePlan( float x )
 	VLOG( "SCN", "plan x=%.0f : %d maillages", x, n );
 }
 
-// � rfl X Z � : maillages A REFLET a moins de 600 unites de (X, Z), avec
+// Â« rfl X Z Â» : maillages A REFLET a moins de 600 unites de (X, Z), avec
 // tout ce qui pilote leur rendu (issue #5). Diagnostic, journal seulement.
-// � uvl � : maillages a UV animes (issue #43), centre et passes.
+// Â« uvl Â» : maillages a UV animes (issue #43), centre et passes.
 void VitaListeUVAnimes( void )
 {
 	int n = 0;
@@ -859,8 +933,8 @@ struct SLot
 	SPlageLot  *p_plages;
 	int         num_plages;
 	unsigned char no_bfc;		// commun au lot : la cle contient le materiau (#38)
-	unsigned char zbias;		// idem, et la cle le contient (issue #69, � zbl �)
-	bool        bb;				// lot de billboards (issue #69, � bbl �), bit 63 de la cle
+	unsigned char zbias;		// idem, et la cle le contient (issue #69, Â« zbl Â»)
+	bool        bb;				// lot de billboards (issue #69, Â« bbl Â»), bit 63 de la cle
 	// Option B : parametres de passe du materiau (commun a tout le lot), jeux
 	// d'UV des passes 1..3, textures des passes. multi = plus d'une passe.
 	bool        multi;
@@ -877,7 +951,7 @@ struct SLot
 	unsigned int   cache_gen;
 	unsigned char  cache_etat;
 	// Alpha minimal des sommets du lot (seuil_effectif) et generation des
-	// etats precalcules (bascule � sma �).
+	// etats precalcules (bascule Â« sma Â»).
 	unsigned char  a_min_sommets;
 	unsigned int   gxm_pre_gen;
 	int            cache_first, cache_count;
@@ -892,7 +966,7 @@ struct SLot
 	unsigned char *p_teinte_orig;
 };
 
-// � fusm 0/1 � : dessiner aussi les lots MULTI-PASSES (par le shader). Coupe
+// Â« fusm 0/1 Â» : dessiner aussi les lots MULTI-PASSES (par le shader). Coupe
 // par defaut : mesure dans New Jersey, vue a 85 % hors champ, le poste monde
 // passait de 13 a 27 ms -- un lot couvre une cellule de grille, et ses
 // maillages hors champ partent au GPU en 4 passes.
@@ -901,7 +975,7 @@ struct SLot
 // image identique au temoin.
 bool g_vita_lots_multi = true;
 
-// � zbl 0/1 � (issue #69) : lots a z-bias. Mesure a Hawaii : 162 translucides
+// Â« zbl 0/1 Â» (issue #69) : lots a z-bias. Mesure a Hawaii : 162 translucides
 // par image n'etaient hors lot QUE pour leur z-bias. Le z-bias est une
 // propriete du MATERIAU (p_scene_load.cpp, mat_zbias) : la cle de lot contient
 // deja le materiau, donc tous les maillages d'un lot ont le meme z-bias, et
@@ -916,8 +990,8 @@ bool g_vita_zbl = true;
 static bool s_zbl_applique = true;
 static int  s_zbl_appels[2] = { 0, 0 };	// appels de lots a z-bias : opaques, translucides
 
-// � bbl 0/1 � (issue #69) : lots de BILLBOARDS. Mesure a Hawaii : 105
-// translucides par image hors lot pour la seule raison � billboard � (les
+// Â« bbl 0/1 Â» (issue #69) : lots de BILLBOARDS. Mesure a Hawaii : 105
+// translucides par image hors lot pour la seule raison Â« billboard Â» (les
 // palmiers), chacun un dessin. Un billboard a 4 sommets recrits a chaque image
 // (bb_mettre_a_jour) : le lot COPIE ces sommets dans son vbo, on note ou
 // (bb_lot_v), et bb_mettre_a_jour recrit aussi ces 4 positions-la, en place,
@@ -946,7 +1020,7 @@ static int   s_num_lots  = 0;
 // changement de programme coute (issue #18). NULL = ordre de construction.
 static int  *sp_ordre_lots = NULL;
 static int   s_nb_ordre_lots = 0;
-// � tril 0/1 � : parcours des lots opaques trie par variante.
+// Â« tril 0/1 Â» : parcours des lots opaques trie par variante.
 bool g_vita_tri_lots = true;
 static unsigned int s_cle_tri_lot( const SLot *L );
 static int cmp_ordre_lots( const void *a, const void *b )
@@ -1360,7 +1434,7 @@ static unsigned long long cle_de_lot( const SWorldMesh *p, const float *mn,
 	// z-bias (0-16, issue #69) : bits 47-51, entre l'etat et la zone. Deja
 	// determine par le materiau ; explicite pour ne jamais fusionner deux
 	// z-bias differents.
-	// Billboard (issue #69, � bbl �) : bit 63, jamais avec un non-billboard.
+	// Billboard (issue #69, Â« bbl Â») : bit 63, jamais avec un non-billboard.
 	// La zone (bits 52-62) reste libre tant que GRILLE_LOTS <= 45.
 	return ( p->p_bb ? ( 1ULL << 63 ) : 0ULL )
 	     | (( (unsigned long long)( zx * n + zz )) << 52 )
@@ -1441,7 +1515,7 @@ static int cmp_entree_lot( const void *a, const void *b )
 // num_vertices = le compte du SECTEUR ENTIER. Concatener tel quel recopierait
 // le secteur entier une fois par maillage. On ne copie donc que les sommets
 // reellement indexes, en les renumerotant.
-// Billboard admis en lot (issue #69, � bbl �) : exactement ses 4 sommets
+// Billboard admis en lot (issue #69, Â« bbl Â») : exactement ses 4 sommets
 // (bb_construire l'impose), une seule couche, sans reflet -- le cas des
 // palmiers. Les autres restent dessines seuls, comme avant.
 static bool bb_admis_en_lot( const SWorldMesh *p, const SVitaMesh *p_src )
@@ -1492,14 +1566,20 @@ static void construire_lots( SVitaSceneGeom *p_geom, int base )
 		//    couleurs sont recrites dans LEUR cbo, pas dans celui du lot.
 		//  - les BILLBOARDS (issue #2) : leurs positions sont recrites dans
 		//    LEUR vbo a chaque image -- sauf ceux qu'admet bb_admis_en_lot,
-		//    dont bb_mettre_a_jour recrit aussi la copie du lot (#69, � bbl �).
+		//    dont bb_mettre_a_jour recrit aussi la copie du lot (#69, Â« bbl Â»).
 		// Le Z-BIAS n'exclut plus (issue #69) : lot a z-bias commun, dessine
-		// par le lot ou maillage par maillage selon � zbl �.
+		// par le lot ou maillage par maillage selon Â« zbl Â».
 		if( p->is_sky || !p->texture || !p->uvbo || !p->cbo || p->uvw
 		    || p->p_vcw || ( p->p_bb && !bb_admis_en_lot( p, &p_geom->p_meshes[i] )))
 			continue;
 		// Reflet en couche 1 suivi d'autres passes : le lot n'en dessinerait
 		// que deux. Chemin individuel (materiau_env_prepare), qui les a toutes.
+#if defined(__PLAT_LINUX__)
+		if( p->texture_env || p->env0 )
+			continue;
+		if( p->texture2 && p->uvbo2 && !p_geom->p_meshes[i].p_colors )
+			continue;
+#else
 		if( p->texture_env && ( p->num_passes > 2 ) && ( p->texture_x[0] || p->texture_envx[0] ))
 			continue;
 		if( p->texture2 && p->uvbo2 )
@@ -1513,6 +1593,7 @@ static void construire_lots( SVitaSceneGeom *p_geom, int base )
 			if( !complet || !p_geom->p_meshes[i].p_colors )
 				continue;
 		}
+#endif
 		p_ent[ne].cle     = cle_de_lot( p, mn, mx, GRILLE_LOTS );
 		p_ent[ne].secteur = p->sector_checksum;
 		p_ent[ne].idx     = i;
@@ -1538,7 +1619,7 @@ static void construire_lots( SVitaSceneGeom *p_geom, int base )
 	unsigned short *sp_idx = NULL;
 	// Table de remappage ancien sommet -> nouveau. Elle n'est PAS effacee entre
 	// deux maillages : chacun y ecrit sa generation, et une entree d'une autre
-	// generation vaut � absente �. Effacer les 65 536 entrees a chaque maillage
+	// generation vaut Â« absente Â». Effacer les 65 536 entrees a chaque maillage
 	// coutait le compte du SECTEUR ENTIER par maillage, soit des dizaines de
 	// milliers d'ecritures inutiles pour un maillage qui n'en indexe que
 	// quelques dizaines.
@@ -1647,9 +1728,21 @@ static void construire_lots( SVitaSceneGeom *p_geom, int base )
 								sp_uvp[x][nv * 2 + 1] = jeux[x] ? jeux[x][o * 2 + 1] : 0.0f;
 							}
 						}
+#if defined(__PLAT_LINUX__)
+						for( int c = 0; c < 3; ++c )
+						{
+							const float raw = p_src->p_colors ? (float)p_src->p_colors[o * 4 + c] : 255.0f;
+							int vc = (int)( raw * ( p_src->mat_color[c] * 2.0f ) + 0.5f );
+							if( vc < 0 )   vc = 0;
+							if( vc > 255 ) vc = 255;
+							sp_col[nv * 4 + c] = (unsigned char)vc;
+						}
+						sp_col[nv * 4 + 3] = p_src->p_colors ? p_src->p_colors[o * 4 + 3] : 255;
+#else
 						for( int c = 0; c < 4; ++c )
 							sp_col[nv * 4 + c] = p_src->p_colors
 							                     ? p_src->p_colors[o * 4 + c] : 255;
+#endif
 						for( int c = 0; c < 3; ++c )
 							sp_nrm[nv * 3 + c] = p_src->p_normals ? p_src->p_normals[o * 3 + c] : 0.0f;
 						++nv;
@@ -1680,9 +1773,9 @@ static void construire_lots( SVitaSceneGeom *p_geom, int base )
 				plages[np - 1].count += ( ni - avant );
 				plages[np - 1].vcount = nv - plages[np - 1].vfirst;	// #63
 				// Lot a z-bias (issue #69) : dessine par le lot seulement si
-				// � zbl � est en vigueur, sinon maillage par maillage.
+				// Â« zbl Â» est en vigueur, sinon maillage par maillage.
 				sp_world[base + mi].lot_zb   = ( p_dst->zbias != 0 );
-				// Billboard (#69, � bbl �) : ou sont ses 4 sommets dans le lot.
+				// Billboard (#69, Â« bbl Â») : ou sont ses 4 sommets dans le lot.
 				// sp_gen/sp_map sont ceux de CE maillage (s_gen courant).
 				sp_world[base + mi].lot_bb   = ( p_dst->p_bb != NULL );
 				for( int v = 0; v < 4; ++v )
@@ -1758,7 +1851,7 @@ static void construire_lots( SVitaSceneGeom *p_geom, int base )
 			L->alpha_cutoff = p_ref->alpha_cutoff;
 		L->no_bfc       = p_ref->no_bfc;
 			L->zbias        = p_ref->zbias;		// issue #69
-			L->bb           = ( p_ref->p_bb != NULL );	// issue #69, � bbl �
+			L->bb           = ( p_ref->p_bb != NULL );	// issue #69, Â« bbl Â»
 			L->mat_flags0   = p_ref->mat_flags0;
 			L->mat_sorted   = p_ref->mat_sorted;
 			L->addr_u       = p_ref->addr_u;
@@ -1782,7 +1875,11 @@ static void construire_lots( SVitaSceneGeom *p_geom, int base )
 					L->addr_pu[x] = pu[x];
 					L->addr_pv[x] = pv[x];
 					L->m.uvbo[1 + x] = 0;
+#if defined(__PLAT_LINUX__)
+					if(( x == 0 ) && ( 1 + x < L->m.passes ))
+#else
 					if( 1 + x < L->m.passes )
+#endif
 					{
 						glGenBuffers( 1, &L->uvbo_p[x] );
 						glBindBuffer( GL_ARRAY_BUFFER, L->uvbo_p[x] );
@@ -1874,7 +1971,7 @@ static void construire_lots( SVitaSceneGeom *p_geom, int base )
 // la couleur du materiau : une texture neutre donne exactement cela dans la
 // formule generale. Sans elle, ces maillages (murs de New Jersey, maillage
 // 4034 du fichier) etaient dessines en aplat translucide, couches ignorees :
-// la facade � a moitie transparente � signalee par l'humain.
+// la facade Â« a moitie transparente Â» signalee par l'humain.
 static GLuint texture_blanche()
 {
 	static GLuint s_tex = 0;
@@ -1975,6 +2072,18 @@ void AddSceneToWorld( SVitaSceneGeom *p_geom, Nx::CTexDict *p_tex_dict,
 			glBindBuffer( GL_ARRAY_BUFFER, p_dst->cbo );
 			glBufferData( GL_ARRAY_BUFFER, 4 * p_src->num_vertices,
 			              p_up, GL_STATIC_DRAW );
+		}
+		else
+		{
+			unsigned char *blanc = (unsigned char *)malloc( 4 * p_src->num_vertices );
+			if( blanc )
+			{
+				memset( blanc, 255, 4 * p_src->num_vertices );
+				glGenBuffers( 1, &p_dst->cbo );
+				glBindBuffer( GL_ARRAY_BUFFER, p_dst->cbo );
+				glBufferData( GL_ARRAY_BUFFER, 4 * p_src->num_vertices, blanc, GL_STATIC_DRAW );
+				free( blanc );
+			}
 		}
 
 		// Coordonnees de texture, si le maillage en a.
@@ -2107,11 +2216,13 @@ void AddSceneToWorld( SVitaSceneGeom *p_geom, Nx::CTexDict *p_tex_dict,
 				if( p_tx )
 				{
 					p_dst->texture_x[x] = ((Nx::CVitaTexture *)p_tx )->GetGLTexture();
+#if !defined(__PLAT_LINUX__)
 					glGenBuffers( 1, &p_dst->uvbo_x[x] );
 					glBindBuffer( GL_ARRAY_BUFFER, p_dst->uvbo_x[x] );
 					glBufferData( GL_ARRAY_BUFFER,
 					              sizeof( float ) * 2 * p_src->num_vertices,
 					              px->p_uvs, GL_STATIC_DRAW );
+#endif
 				}
 			}
 		}
@@ -2128,8 +2239,12 @@ void AddSceneToWorld( SVitaSceneGeom *p_geom, Nx::CTexDict *p_tex_dict,
 		// brut ne coute que pour ces materiaux (220 Ko au pire, VC).
 		const bool mat_eclaircit = !mat_neutre
 		    && (( mat_f[0] > 1.0f ) || ( mat_f[1] > 1.0f ) || ( mat_f[2] > 1.0f ));
+#if !defined(__PLAT_LINUX__)
 		if(( p_dst->texture2 || p_dst->texture_env || p_dst->env0 || p_src->uvw || mat_eclaircit )
 		    && p_dst->cbo )
+#else
+		if( p_dst->cbo )
+#endif
 		{
 			if( mat_neutre )
 				p_dst->cbo_brut = p_dst->cbo;
@@ -2208,7 +2323,7 @@ void AddSceneToWorld( SVitaSceneGeom *p_geom, Nx::CTexDict *p_tex_dict,
 		p_dst->is_sky      = is_sky;
 		p_dst->dans_lot    = false;
 		p_dst->lot_zb      = false;		// issue #69
-		p_dst->lot_bb      = false;		// issue #69, � bbl �
+		p_dst->lot_bb      = false;		// issue #69, Â« bbl Â»
 		for( int v = 0; v < 4; ++v )
 			p_dst->bb_lot_v[v] = -1;
 
@@ -2390,8 +2505,8 @@ void AddSceneToWorld( SVitaSceneGeom *p_geom, Nx::CTexDict *p_tex_dict,
 
 // --- Tri de visibilite ------------------------------------------------------
 //
-// Le palier 3 assumait � pas de frustum culling, on veut un signal visuel
-// vite �. La mesure est arrivee : 4761 maillages dessines A CHAQUE FRAME pour
+// Le palier 3 assumait Ã¯Â¿Â½ pas de frustum culling, on veut un signal visuel
+// vite Ã¯Â¿Â½. La mesure est arrivee : 4761 maillages dessines A CHAQUE FRAME pour
 // ~9,5 fps, alors que la camera n'en voit qu'une fraction.
 //
 // Methode de Gribb-Hartmann : les six plans du tronc de vision se lisent
@@ -2400,7 +2515,7 @@ void AddSceneToWorld( SVitaSceneGeom *p_geom, Nx::CTexDict *p_tex_dict,
 static float s_planes[6][4];
 static float s_proj[16];
 // Combien de maillages ont VRAIMENT ete dessines a la derniere frame. Sans ce
-// compteur, � le culling marche � resterait une croyance.
+// compteur, Ã¯Â¿Â½ le culling marche Ã¯Â¿Â½ resterait une croyance.
 static int   s_last_drawn = 0;
 static float s_cur_view[16];
 static bool  s_cur_view_ok = false;
@@ -2416,12 +2531,12 @@ static float s_view_models[16];
 static Mth::Matrix s_cam_models_mat;
 // Projection x vue de l'image, pour le shader du decor (p_shader_decor.h).
 static float s_pv_shader[16];
-// Tampon � lot deja dessine a cette image � (passe translucide, issue #18).
+// Tampon Â« lot deja dessine a cette image Â» (passe translucide, issue #18).
 #define MAX_LOTS_TRACES 8192
 static unsigned int s_lot_image[MAX_LOTS_TRACES];
 static unsigned int s_image_courante = 0;
 static int          s_appels_lots_transp = 0;
-// � fust 0/1 � : lots dans la passe translucide (dessines a leur place).
+// Â« fust 0/1 Â» : lots dans la passe translucide (dessines a leur place).
 bool g_vita_lots_transp = true;
 static int          s_transp_seuls = 0, s_transp_hors_lot = 0;
 
@@ -2465,14 +2580,14 @@ static void extract_frustum( const float *pv )
 
 // Vrai si la boite est au moins partiellement dans le champ.
 //
-// [REFUTE] 2026-08-15 : � le culling rejette 94 a 99 % des maillages, c'est
-// forcement un bug �. Mesure faite, plans et distances journalises : les
+// [REFUTE] 2026-08-15 : Â« le culling rejette 94 a 99 % des maillages, c'est
+// forcement un bug Â». Mesure faite, plans et distances journalises : les
 // rejets sont LEGITIMES. Exemples releves -- boite a -14423 en X rejetee avec
 // d=-10236, boite a -3747 avec d=-4753, et un cas limite a d=-77 juste
 // derriere le plan. Les plans portent bien leur distance (D=-1338, non nulle)
 // des lors que la vue est etablie.
 //
-// La pr�misse etait fausse, faute de point de comparaison : sur un niveau
+// La prÃ©misse etait fausse, faute de point de comparaison : sur un niveau
 // ouvert de 4441 maillages couvrant un quartier, n'en voir que 5 a 10 %
 // depuis un point donne est NORMAL.
 //
@@ -2512,7 +2627,7 @@ static inline bool box_visible( const float *bb_min, const float *bb_max )
 	return box_visible_scalaire( bb_min, bb_max );
 }
 
-// Boite ENTIEREMENT dans le tronc : le coin le plus � negatif � de chaque plan
+// Boite ENTIEREMENT dans le tronc : le coin le plus Â« negatif Â» de chaque plan
 // est encore du bon cote. Alors toute sous-boite est visible elle aussi.
 static inline bool box_dedans( const float *bb_min, const float *bb_max )
 {
@@ -2546,8 +2661,12 @@ static void mat_mul( float *out, const float *a, const float *b )
 
 // Projection en perspective, ecrite a la main : VitaGL expose gluPerspective
 // mais on prefere ne dependre que du strict minimum.
-// "pll X" : plan lointain (#69). XBox : 32000 (NX/render.cpp:1788) ; Vita : 100000.
+// "pll X" : plan lointain (#69). XBox : 32000 (NX/render.cpp:1788) ; Vita : 100000. R36S/Linux otimizado com fog: 18000.
+#if defined(__PLAT_LINUX__)
+float g_vita_plan_loin = 18000.0f;
+#else
 float g_vita_plan_loin = 100000.0f;
+#endif
 
 static void set_projection( float fov_deg, float aspect, float znear, float zfar )
 {
@@ -2579,6 +2698,13 @@ bool GetViewMatrix( float out[16] )
 }
 
 
+bool GetProjMatrix( float out[16] )
+{
+	memcpy( out, s_proj, sizeof( s_proj ));
+	return true;
+}
+
+
 // Recalcule vue + tronc de vision depuis la camera ACTIVE, maintenant.
 //
 // Raison d'etre : les modeles sont rendus depuis la phase logique
@@ -2597,8 +2723,8 @@ bool GetViewMatrix( float out[16] )
 // modeles. Rafraichir la vue a chaque modele projetait donc, dans la MEME
 // frame, les objets d'avant le mouvement de camera avec l'ancienne vue et
 // ceux d'apres avec la nouvelle : des que le stick bouge la camera, les
-// personnages divergent entre eux et par rapport au decor -- le � glissement
-// des PNJ � rapporte deux fois. Leurs positions monde, elles, ne bougeaient
+// personnages divergent entre eux et par rapport au decor -- le Ã¯Â¿Â½ glissement
+// des PNJ Ã¯Â¿Â½ rapporte deux fois. Leurs positions monde, elles, ne bougeaient
 // pas (mesure : aucun composant ne modifie m_pos), et leurs ombres suivaient
 // puisque c'est la projection entiere de la piece qui differait.
 static bool s_frame_view_fresh = false;
@@ -2762,7 +2888,7 @@ static float dead_constant_fov( void )
 	// de l'image, il faut tan( fov_v / 2 ) = 224 / 448 = 0,5, soit 53,13
 	// degres. Cette valeur ne depend PAS de l'aspect : les deux axes divisent
 	// par 448, et c'est l'axe horizontal qui absorbe l'aspect via la
-	// correction � screenX *= aspect / 1,3333 � (Element3d.cpp:62).
+	// correction Ã¯Â¿Â½ screenX *= aspect / 1,3333 Ã¯Â¿Â½ (Element3d.cpp:62).
 	//
 	// Verification croisee : sur un ecran 4/3, cela donne
 	// tan( fov_h / 2 ) = 0,5 x 1,333, soit ~67 degres horizontaux -- coherent
@@ -3000,7 +3126,7 @@ static void construire_listes( int rang_ciel, int rang_opaque,
 			const unsigned int d = c->drapeaux;
 			// Classement et sauts SANS toucher SWorldMesh (issue #18). Un
 			// opaque deja dessine par son lot n'a pas besoin d'etre culle :
-			// la boucle de dessin l'ignorerait (� Deja dessine par son lot �).
+			// la boucle de dessin l'ignorerait (Â« Deja dessine par son lot Â»).
 			if( !( d & CULL_CIEL ))
 			{
 				const bool translucide = !g_vita_force_opaque
@@ -3014,6 +3140,7 @@ static void construire_listes( int rang_ciel, int rang_opaque,
 				if( g_vita_cull && s_cur_view_ok
 				    && !box_visible( c->bb_min, c->bb_max ))
 					continue;
+// c->sphere[3] culling removed to prevent ground/ramp holes and missing house walls
 				if( g_vita_occlusion && s_cur_view_ok
 				    && OcclusionTesteSphere( c->sphere[0], c->sphere[1], c->sphere[2], c->sphere[3] ))
 					continue;
@@ -3087,7 +3214,7 @@ static void construire_listes( int rang_ciel, int rang_opaque,
 			                         && ( g_vita_transp_flag
 			                              ? ( transp_par_drapeau || melange_opq )
 			                              : ( p->blend != 0 ));
-			// Un translucide que son materiau marque � trie � attend la passe
+			// Un translucide que son materiau marque Â« trie Â» attend la passe
 			// du tri par profondeur.
 			const bool trie = ( translucent && p->mat_sorted
 			                                && g_vita_tri_profondeur
@@ -3139,7 +3266,11 @@ static int cmp_profondeur( const void *p1, const void *p2 )
 // Partage : le travailleur lit le decor, les plans du tronc, l'occlusion et
 // l'etat des secteurs -- tous figes pendant RenderWorld -- et n'ecrit que les
 // listes non-ciel, que le principal ne lit qu'apres l'attente.
+#if defined(__PLAT_LINUX__)
+bool g_vita_listes_mt = false;
+#else
 bool g_vita_listes_mt = true;
+#endif
 static SceUID s_lmt_go = -1, s_lmt_fini = -1;
 static int    s_lmt_etat = 0;			// 0 a creer, 1 pret, -1 echec
 static bool   s_lmt_en_cours = false;
@@ -3249,8 +3380,12 @@ static void materiau_shader_dessine( const SWorldMesh *p )
 	materiau_shader_dessine_m( p, &m );
 }
 
-// � env 0/1 � : couche 1 en environment mapping (issue #5).
+// Â« env 0/1 Â» : couche 1 en environment mapping (issue #5).
+#if defined(__PLAT_LINUX__)
+bool g_vita_env = false;
+#else
 bool g_vita_env = true;
+#endif
 static int s_env_dessines = 0;
 static int s_uvw_dessines = 0;		// issue #43, par le chemin GXM a une couche
 
@@ -3259,7 +3394,7 @@ static void materiau_shader_prepare( const SWorldMesh *p, SShaderMateriau *p_m )
 // Materiau d'un maillage a couche 1 en REFLET : passe 0 telle quelle, passe 1
 // sans jeu d'UV, ses coordonnees calculees dans le vertex shader a partir de
 // la normale (formule Xbox : XBox/NX/material.cpp:412).
-// � epx 0/1 � (issue #72) : passes 2-3 en reflet. XBox les traite comme la
+// Â« epx 0/1 Â» (issue #72) : passes 2-3 en reflet. XBox les traite comme la
 // couche 1 (material.cpp:412, boucle sur p). 0 = ancien rendu : la chaine
 // s'arrete a la passe en reflet.
 bool g_vita_env_x = true;
@@ -3296,7 +3431,7 @@ static bool materiau_env_prepare( const SWorldMesh *p, SShaderMateriau *p_m )
 	}
 	// Passes 2 et 3 apres une passe en reflet (materiau_shader_prepare
 	// s'arrete faute de texture2 ou de texture_x). Couleurs, modes et alphas
-	// des indices 2-3 y sont deja poses. Une passe 2-3 en reflet (� epx �)
+	// des indices 2-3 y sont deja poses. Une passe 2-3 en reflet (Â« epx Â»)
 	// prend ses coordonnees de la normale, comme la couche 1.
 	while(( m.passes >= 2 ) && ( m.passes < 4 ) && ( m.passes < (int)p->num_passes ))
 	{
@@ -3322,7 +3457,7 @@ static bool materiau_env_prepare( const SWorldMesh *p, SShaderMateriau *p_m )
 // l'alpha des sommets) et jette le pixel si a0 < seuil. Si les minimums
 // connus garantissent a0 >= seuil partout, le discard ne retirerait jamais
 // rien -- mais sur ce GPU (PowerVR), sa seule presence coupe le rejet precoce
-// des surfaces cachees. [MESURE] V1, GPU a 111 MHz : � at 0 � fait gagner
+// des surfaces cachees. [MESURE] V1, GPU a 111 MHz : Â« at 0 Â» fait gagner
 // 2,4 ms de presentation. Ici on ne retire que les discards inutiles : image
 // identique par construction. Marge de 1/255 pour l'arrondi du half.
 static float seuil_effectif( unsigned int cutoff, GLuint tex, unsigned int a_min_sommets,
@@ -3447,7 +3582,7 @@ static void materiau_shader_prepare( const SWorldMesh *p, SShaderMateriau *p_m )
 // Lie les textures des passes et dessine avec la variante de m.
 static void materiau_shader_dessine_m( const SWorldMesh *p, const SShaderMateriau *p_m )
 {
-	zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky );
+	zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky || ( p->alpha_cutoff > 0 ));
 	const GLuint tex[4] = { p->texture, p->texture2,
 	                        p->texture_x[0], p->texture_x[1] };
 	const unsigned char au[4] = { p->addr_u, p->addr2_u, p->addr_xu[0], p->addr_xu[1] };
@@ -3460,11 +3595,117 @@ static void materiau_shader_dessine_m( const SWorldMesh *p, const SShaderMateria
 	}
 	if( !ShaderMateriauMaillage( p_m ))
 	{
+		if( !p->vbo || !p->ibo || p->num_indices <= 0 )
+			return;
+
+		ShaderMateriauResetProgramme();
+
+		for( int k = p_m->passes - 1; k >= 1; --k )
+		{
+			glActiveTexture( GL_TEXTURE0 + k );
+			glBindTexture( GL_TEXTURE_2D, 0 );
+			glDisable( GL_TEXTURE_2D );
+		}
 		glActiveTexture( GL_TEXTURE0 );
-		return;		// pas de variante : ne pas dessiner en pipeline fixe incoherent
+
+		GLuint tex0 = p->texture;
+		GLuint uvbo0 = p->uvbo;
+		unsigned char au0 = p->addr_u, av0 = p->addr_v;
+		if( !tex0 && p->texture2 )
+		{
+			tex0 = p->texture2;
+			uvbo0 = p->uvbo2;
+			au0 = p->addr2_u;
+			av0 = p->addr2_v;
+		}
+
+		if( tex0 )
+		{
+			glEnable( GL_TEXTURE_2D );
+			glBindTexture( GL_TEXTURE_2D, tex0 );
+			poser_adressage( au0, av0 );
+		}
+		else
+		{
+			glDisable( GL_TEXTURE_2D );
+		}
+		glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+
+		glEnableClientState( GL_VERTEX_ARRAY );
+		glBindBuffer( GL_ARRAY_BUFFER, p->vbo );
+		glVertexPointer( 3, GL_FLOAT, 0, NULL );
+
+		if( uvbo0 )
+		{
+			glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+			glBindBuffer( GL_ARRAY_BUFFER, uvbo0 );
+			glTexCoordPointer( 2, GL_FLOAT, 0, NULL );
+		}
+		else
+		{
+			glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+		}
+
+		if( p->cbo )
+		{
+			glEnableClientState( GL_COLOR_ARRAY );
+			glBindBuffer( GL_ARRAY_BUFFER, p->cbo );
+			const bool sans_alpha = ( g_vita_ignore_vertex_alpha
+			                          && ( p->mat_flags0 & 0x1000 ));
+			if( sans_alpha )
+				glColorPointer( 3, GL_UNSIGNED_BYTE, 4, NULL );
+			else
+				glColorPointer( 4, GL_UNSIGNED_BYTE, 0, NULL );
+		}
+		else
+		{
+			glDisableClientState( GL_COLOR_ARRAY );
+		}
+
+		// Deuxieme couche en multitexture pour le fallback FFP (maisons avec masque)
+		const bool couche2 = ( g_vita_multitex && ( tex0 == p->texture ) && p->texture2 && p->uvbo2 );
+		if( couche2 )
+		{
+			glActiveTexture( GL_TEXTURE1 );
+			glEnable( GL_TEXTURE_2D );
+			glBindTexture( GL_TEXTURE_2D, p->texture2 );
+			poser_adressage( p->addr2_u, p->addr2_v, p->texture2 );
+			poser_env_couche2( p->blend2, p->c1, p->texture2 );
+			glClientActiveTexture( GL_TEXTURE1 );
+			glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+			glBindBuffer( GL_ARRAY_BUFFER, p->uvbo2 );
+			glTexCoordPointer( 2, GL_FLOAT, 0, NULL );
+			glClientActiveTexture( GL_TEXTURE0 );
+			glActiveTexture( GL_TEXTURE0 );
+		}
+
+		glBindBuffer( GL_ARRAY_BUFFER, 0 );
+		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, p->ibo );
+		zbias_poser( p->zbias );
+		cull_poser( p->no_bfc || p->is_sky || ( p->alpha_cutoff > 0 ));
+
+		glDrawElements( GL_TRIANGLE_STRIP, p->num_indices, GL_UNSIGNED_SHORT, NULL );
+
+		if( couche2 )
+		{
+			glClientActiveTexture( GL_TEXTURE1 );
+			glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+			glActiveTexture( GL_TEXTURE1 );
+			glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
+			glDisable( GL_TEXTURE_2D );
+			glActiveTexture( GL_TEXTURE0 );
+			glClientActiveTexture( GL_TEXTURE0 );
+		}
+
+		glDisableClientState( GL_VERTEX_ARRAY );
+		glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+		glDisableClientState( GL_COLOR_ARRAY );
+
+		++s_shd_materiaux;
+		return;
 	}
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, p->ibo );
-	zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky );
+	zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky || ( p->alpha_cutoff > 0 ));
 	glDrawElements( GL_TRIANGLE_STRIP, p->num_indices,
 	                GL_UNSIGNED_SHORT, NULL );
 	glActiveTexture( GL_TEXTURE0 );
@@ -3472,7 +3713,7 @@ static void materiau_shader_dessine_m( const SWorldMesh *p, const SShaderMateria
 }
 
 // Raison pour laquelle un translucide est dessine par vitaGL (issue #18,
-// diagnostic de � gxt �). gxs_essaye / gxt_essaye : un chemin GXM a ete
+// diagnostic de Â« gxt Â»). gxs_essaye / gxt_essaye : un chemin GXM a ete
 // tente et a refuse (texture sans descripteur, variante absente).
 static void raison_vitagl( const SWorldMesh *p, bool gxs_essaye, bool gxt_essaye, bool trie )
 {
@@ -3531,12 +3772,12 @@ static int cmp_cle_materiau( const void *a, const void *b )
 static bool s_gxd_on = false;
 static bool s_liste_lots = false;
 static bool s_trav_lots = false;
-// Culling par plage des lots multi-passes (� cpl 0/1 �, issue #18). Sans lui,
+// Culling par plage des lots multi-passes (Â« cpl 0/1 Â», issue #18). Sans lui,
 // un lot multi entier se dessine en un seul dessin precalcule (donc sur
-// l'autre coeur avec � lmd �) ; le GPU traite quelques sommets hors champ en
+// l'autre coeur avec Â« lmd Â») ; le GPU traite quelques sommets hors champ en
 // plus.
-bool g_vita_cull_plages = false;	// lots precalcules sur l'autre coeur (� lmd �)	// lots opaques enregistres en liste (� gcl �)
-// � gxp 0/1 � : dessins precalcules pour les lots entiers (issue #18).
+bool g_vita_cull_plages = false;	// lots precalcules sur l'autre coeur (Â« lmd Â»)	// lots opaques enregistres en liste (Â« gcl Â»)
+// Â« gxp 0/1 Â» : dessins precalcules pour les lots entiers (issue #18).
 bool g_vita_gxm_pre = true;
 
 // Descripteur GXM d'une texture, adressage pose. L'adresse rendue par
@@ -3562,10 +3803,10 @@ static SceGxmTexture *gxm_texture( GLuint tex, unsigned char u, unsigned char v 
 // de la camera. glPolygonOffset agit tout de suite sur le contexte GXM
 // immediat (vitaGL update_polygon_offset), donc aussi sur nos dessins directs.
 static unsigned char s_zbias_cour = 0;
-bool g_vita_zbias = true;		// � zbi 0/1 �
+bool g_vita_zbias = true;		// Â« zbi 0/1 Â»
 // Culling des faces arriere (issue #38). XBox : D3DCULL_CW sauf materiau
 // double face. Le passage au repere GL peut inverser l'orientation : mode
-// choisi a l'ecran. � bfc 0/1/2 � : aucun / faces arriere (GL_BACK) /
+// choisi a l'ecran. Â« bfc 0/1/2 Â» : aucun / faces arriere (GL_BACK) /
 // faces avant (GL_FRONT).
 int g_vita_bfc = 1;		// valide a Slam City, 4 orientations : rien ne disparait
 static int s_cull_cour = -1;
@@ -3610,13 +3851,14 @@ static int s_cpt_lots[4] = { 0, 0, 0, 0 };	// parcourus, champ, non occultes, pr
 static int s_cpt_plages = 0;
 static int dessiner_lot( SLot *L, bool transp, bool shd, bool shd_mat, int &drawn )
 {
+	bool lot_couche2 = false;
 	// z-bias commun au lot (issue #69) : 0 pour tout lot sans decalque, donc
 	// identique a l'ancien zbias_poser( 0 ). glPolygonOffset agit tout de
 	// suite sur gxm_context (vitaGL misc.c, update_polygon_offset), y compris
-	// pendant une liste � gcl � (gxm_context = contexte differe) ; le
-	// travailleur � lmt � ne l'a pas : voir GxmTravPousser plus bas.
+	// pendant une liste Â« gcl Â» (gxm_context = contexte differe) ; le
+	// travailleur Â« lmt Â» ne l'a pas : voir GxmTravPousser plus bas.
 	zbias_poser( L->zbias );
-	cull_poser( L->no_bfc );
+	cull_poser( L->no_bfc || ( L->alpha_cutoff > 0 ));
 	int n_appels_lots = 0;
 	const int RANG_TRANSP = 1, pass = transp ? 1 : 0;
 			if( pass == RANG_TRANSP )
@@ -3626,6 +3868,16 @@ static int dessiner_lot( SLot *L, bool transp, bool shd, bool shd_mat, int &draw
 			case 1:  case 2:
 				glBlendFunc( GL_SRC_ALPHA, GL_ONE );
 				break;
+#if defined(__PLAT_LINUX__)
+			case 3:  case 4:
+				glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+				glBlendEquation( GL_FUNC_ADD );
+				break;
+			case 7:  case 8:
+				glBlendFunc( GL_DST_COLOR, GL_ZERO );
+				glBlendEquation( GL_FUNC_ADD );
+				break;
+#else
 			case 3:  case 4:
 				glBlendFunc( GL_SRC_ALPHA, GL_ONE );
 				glBlendEquation( GL_FUNC_REVERSE_SUBTRACT );
@@ -3633,6 +3885,7 @@ static int dessiner_lot( SLot *L, bool transp, bool shd, bool shd_mat, int &draw
 			case 7:  case 8:
 				glBlendFunc( GL_ZERO, GL_SRC_ALPHA );	// MODULATE : XBox render.cpp
 				break;
+#endif
 			case 9:  case 10:
 				glBlendFunc( GL_DST_COLOR, GL_ONE );
 				break;
@@ -3730,7 +3983,7 @@ static int dessiner_lot( SLot *L, bool transp, bool shd, bool shd_mat, int &draw
 		// Lot entier visible en une seule plage : dessin precalcule.
 		if( L->gxm_pre_gen != g_vita_gen_pre )
 		{
-			// Reglage change (� sma �) : l'etat precalcule porte l'ancienne
+			// Reglage change (Â« sma Â») : l'etat precalcule porte l'ancienne
 			// variante. Il est rendu (#32) puis reconstruit.
 			L->gxm_pre_gen   = g_vita_gen_pre;
 			L->gxm_pre_essaye = false;
@@ -3766,16 +4019,11 @@ static int dessiner_lot( SLot *L, bool transp, bool shd, bool shd_mat, int &draw
 			drawn += actives;
 			return np;
 		}
-		// Passe en reflet : seul GXM sait la dessiner (issue #5).
-		if( L->m.env )
-			return 0;
 		// Pas de chemin GXM pour cette variante : on rend la main a vitaGL
 		// pour ce lot, puis on reprend.
 		GxmMateriauFin();
 		GxmMateriauDebut( s_pv_shader );
 	}
-	if( shd_mat && L->m.env )
-		return 0;	// idem, hors session GXM
 
 	if( shd_mat )
 	{
@@ -3787,11 +4035,94 @@ static int dessiner_lot( SLot *L, bool transp, bool shd, bool shd_mat, int &draw
 		}
 		glActiveTexture( GL_TEXTURE0 );
 		glBindTexture( GL_TEXTURE_2D, L->texture );
-		poser_adressage( L->addr_u, L->addr_v );
+		poser_adressage( L->addr_u, L->addr_v, L->texture );
 		L->m.seuil = seuil_effectif( L->alpha_cutoff, L->texture, L->a_min_sommets,
 		                             L->m.ignore_alpha[0] );
 		if( !ShaderMateriauMaillage( &L->m ))
-			return 0;		// pas de variante : lot saute plutot que mal dessine
+		{
+			ShaderMateriauResetProgramme();
+
+			for( int k = L->m.passes - 1; k >= 1; --k )
+			{
+				glActiveTexture( GL_TEXTURE0 + k );
+				glBindTexture( GL_TEXTURE_2D, 0 );
+				glDisable( GL_TEXTURE_2D );
+			}
+			glActiveTexture( GL_TEXTURE0 );
+
+			GLuint tex0 = L->texture;
+			GLuint uvbo0 = L->uvbo;
+			unsigned char au0 = L->addr_u, av0 = L->addr_v;
+			if( !tex0 && L->tex_p[0] )
+			{
+				tex0 = L->tex_p[0];
+				uvbo0 = L->uvbo_p[0];
+				au0 = L->addr_pu[0];
+				av0 = L->addr_pv[0];
+			}
+
+			if( tex0 )
+			{
+				glEnable( GL_TEXTURE_2D );
+				glBindTexture( GL_TEXTURE_2D, tex0 );
+				poser_adressage( au0, av0 );
+			}
+			else
+			{
+				glDisable( GL_TEXTURE_2D );
+			}
+			glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+
+			glEnableClientState( GL_VERTEX_ARRAY );
+			glBindBuffer( GL_ARRAY_BUFFER, L->vbo );
+			glVertexPointer( 3, GL_FLOAT, 0, NULL );
+
+			if( uvbo0 )
+			{
+				glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+				glBindBuffer( GL_ARRAY_BUFFER, uvbo0 );
+				glTexCoordPointer( 2, GL_FLOAT, 0, NULL );
+			}
+			else
+			{
+				glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+			}
+
+			if( L->cbo )
+			{
+				glEnableClientState( GL_COLOR_ARRAY );
+				glBindBuffer( GL_ARRAY_BUFFER, L->cbo );
+				const bool sans_alpha = ( g_vita_ignore_vertex_alpha
+				                          && ( L->mat_flags0 & 0x1000 ));
+				if( sans_alpha )
+					glColorPointer( 3, GL_UNSIGNED_BYTE, 4, NULL );
+				else
+					glColorPointer( 4, GL_UNSIGNED_BYTE, 0, NULL );
+			}
+			else
+			{
+				glDisableClientState( GL_COLOR_ARRAY );
+			}
+
+			lot_couche2 = ( g_vita_multitex && ( tex0 == L->texture ) && L->multi && L->tex_p[0] && L->uvbo_p[0] );
+			if( lot_couche2 )
+			{
+				glActiveTexture( GL_TEXTURE1 );
+				glEnable( GL_TEXTURE_2D );
+				glBindTexture( GL_TEXTURE_2D, L->tex_p[0] );
+				poser_adressage( L->addr_pu[0], L->addr_pv[0] );
+				poser_env_couche2( L->m.mode[1], L->m.c[1], L->tex_p[0] );
+				glClientActiveTexture( GL_TEXTURE1 );
+				glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+				glBindBuffer( GL_ARRAY_BUFFER, L->uvbo_p[0] );
+				glTexCoordPointer( 2, GL_FLOAT, 0, NULL );
+				glClientActiveTexture( GL_TEXTURE0 );
+				glActiveTexture( GL_TEXTURE0 );
+			}
+
+			glBindBuffer( GL_ARRAY_BUFFER, 0 );
+			glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, L->ibo );
+		}
 		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, L->ibo );
 	}
 	else if( shd )
@@ -3799,35 +4130,90 @@ static int dessiner_lot( SLot *L, bool transp, bool shd, bool shd_mat, int &draw
 		ShaderDecorSeuil(( g_vita_alpha_test && ( L->alpha_cutoff > 0 ))
 		                 ? (float)L->alpha_cutoff / 255.0f : 0.0f );
 		glBindTexture( GL_TEXTURE_2D, L->texture );
-		poser_adressage( L->addr_u, L->addr_v );
+		poser_adressage( L->addr_u, L->addr_v, L->texture );
 		ShaderDecorTampons( L->vbo, L->uvbo, L->cbo );
 		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, L->ibo );
 	}
 	else
 	{
-	if( g_vita_alpha_test && ( L->alpha_cutoff > 0 ))
-	{
-		glEnable( GL_ALPHA_TEST );
-		glAlphaFunc( GL_GEQUAL, (float)L->alpha_cutoff / 255.0f );
-	}
-	else
-		glDisable( GL_ALPHA_TEST );
+		if( g_vita_alpha_test && ( L->alpha_cutoff > 0 )
+		    && !( L->multi && ( pass == 0 ) ))
+		{
+			glEnable( GL_ALPHA_TEST );
+			glAlphaFunc( GL_GEQUAL, (float)L->alpha_cutoff / 255.0f );
+		}
+		else
+			glDisable( GL_ALPHA_TEST );
 
-	glEnable( GL_TEXTURE_2D );
-	glBindTexture( GL_TEXTURE_2D, L->texture );
-	poser_adressage( L->addr_u, L->addr_v );
-	glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+		GLuint tex0 = L->texture;
+		GLuint uvbo0 = L->uvbo;
+		unsigned char au0 = L->addr_u, av0 = L->addr_v;
+		if( !tex0 && L->tex_p[0] )
+		{
+			tex0 = L->tex_p[0];
+			uvbo0 = L->uvbo_p[0];
+			au0 = L->addr_pu[0];
+			av0 = L->addr_pv[0];
+		}
 
-	glBindBuffer( GL_ARRAY_BUFFER, L->vbo );
-	glVertexPointer( 3, GL_FLOAT, 0, NULL );
-	glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-	glBindBuffer( GL_ARRAY_BUFFER, L->uvbo );
-	glTexCoordPointer( 2, GL_FLOAT, 0, NULL );
-	glEnableClientState( GL_COLOR_ARRAY );
-	glBindBuffer( GL_ARRAY_BUFFER, L->cbo );
-	glColorPointer( 4, GL_UNSIGNED_BYTE, 0, NULL );
-	glBindBuffer( GL_ARRAY_BUFFER, 0 );
-	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, L->ibo );
+		if( tex0 )
+		{
+			glEnable( GL_TEXTURE_2D );
+			glBindTexture( GL_TEXTURE_2D, tex0 );
+			poser_adressage( au0, av0 );
+		}
+		else
+		{
+			glDisable( GL_TEXTURE_2D );
+		}
+		glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+
+		glBindBuffer( GL_ARRAY_BUFFER, L->vbo );
+		glVertexPointer( 3, GL_FLOAT, 0, NULL );
+		if( uvbo0 )
+		{
+			glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+			glBindBuffer( GL_ARRAY_BUFFER, uvbo0 );
+			glTexCoordPointer( 2, GL_FLOAT, 0, NULL );
+		}
+		else
+		{
+			glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+		}
+		if( L->cbo )
+		{
+			glEnableClientState( GL_COLOR_ARRAY );
+			glBindBuffer( GL_ARRAY_BUFFER, L->cbo );
+			const bool sans_alpha = ( g_vita_ignore_vertex_alpha
+			                          && ( L->mat_flags0 & 0x1000 ));
+			if( sans_alpha )
+				glColorPointer( 3, GL_UNSIGNED_BYTE, 4, NULL );
+			else
+				glColorPointer( 4, GL_UNSIGNED_BYTE, 0, NULL );
+		}
+		else
+		{
+			glDisableClientState( GL_COLOR_ARRAY );
+		}
+
+		lot_couche2 = ( g_vita_multitex && ( tex0 == L->texture ) && L->multi && L->tex_p[0] && L->uvbo_p[0] );
+		if( lot_couche2 )
+		{
+			glActiveTexture( GL_TEXTURE1 );
+			glEnable( GL_TEXTURE_2D );
+			glBindTexture( GL_TEXTURE_2D, L->tex_p[0] );
+			poser_adressage( L->addr_pu[0], L->addr_pv[0] );
+			poser_env_couche2( L->m.mode[1], L->m.c[1], L->tex_p[0] );
+			glClientActiveTexture( GL_TEXTURE1 );
+			glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+			glBindBuffer( GL_ARRAY_BUFFER, L->uvbo_p[0] );
+			glTexCoordPointer( 2, GL_FLOAT, 0, NULL );
+			glClientActiveTexture( GL_TEXTURE0 );
+			glActiveTexture( GL_TEXTURE0 );
+		}
+
+		glBindBuffer( GL_ARRAY_BUFFER, 0 );
+		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, L->ibo );
 	}
 
 	// Pipeline fixe (issue #45) : brouillard noir pour ADD..SUB_FIXED.
@@ -3867,6 +4253,16 @@ static int dessiner_lot( SLot *L, bool transp, bool shd, bool shd_mat, int &draw
 		glDrawElements( GL_TRIANGLES, count, GL_UNSIGNED_SHORT,
 		                (const void *)( first * sizeof( unsigned short )));
 		++n_appels_lots;
+	}
+	if( lot_couche2 )
+	{
+		glClientActiveTexture( GL_TEXTURE1 );
+		glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+		glActiveTexture( GL_TEXTURE1 );
+		glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
+		glDisable( GL_TEXTURE_2D );
+		glActiveTexture( GL_TEXTURE0 );
+		glClientActiveTexture( GL_TEXTURE0 );
 	}
 	return n_appels_lots;
 }
@@ -3924,10 +4320,125 @@ static GLuint s_uv_nul = 0;
 static int    s_uv_nul_nv = 0;
 static GLuint s_tex_blanche_inst = 0;
 
+#if defined(__PLAT_LINUX__)
+static bool linux_dessiner_shader_maillage( const SWorldMesh *p, const SShaderMateriau *p_m,
+                                           const GLuint tg[4], const unsigned char au[4], const unsigned char av[4],
+                                           int blend, bool is_transp )
+{
+	if( is_transp )
+	{
+		glEnable( GL_BLEND );
+		switch( blend & 0x1F )
+		{
+			case 1:  case 2: glBlendFunc( GL_SRC_ALPHA, GL_ONE ); break;
+			case 3:  case 4: glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA ); glBlendEquation( GL_FUNC_REVERSE_SUBTRACT ); break;
+			default: glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA ); break;
+		}
+		if(( blend != 3 ) && ( blend != 4 ))
+			glBlendEquation( GL_FUNC_ADD );
+	}
+	else
+	{
+		glDisable( GL_BLEND );
+	}
+
+	if( g_vita_alpha_test && ( p->alpha_cutoff > 0 ))
+	{
+		glEnable( GL_ALPHA_TEST );
+		glAlphaFunc( GL_GEQUAL, (float)p->alpha_cutoff / 255.0f );
+	}
+	else
+	{
+		glDisable( GL_ALPHA_TEST );
+	}
+
+	for( int q = p_m->passes - 1; q >= 0; --q )
+	{
+		glActiveTexture( GL_TEXTURE0 + q );
+		glBindTexture( GL_TEXTURE_2D, tg[q] );
+		poser_adressage( au[q], av[q], tg[q] );
+	}
+
+	zbias_poser( p->zbias );
+	cull_poser( p->no_bfc || p->is_sky || ( p->alpha_cutoff > 0 ));
+
+	if( ShaderMateriauMaillage( p_m ) )
+	{
+		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, p->ibo );
+		glDrawElements( GL_TRIANGLE_STRIP, p->num_indices, GL_UNSIGNED_SHORT, NULL );
+		return true;
+	}
+
+	// Fallback FFP quando shader de material falhar ou nao estiver disponivel
+	if( !p->vbo || !p->ibo || p->num_indices <= 0 )
+		return false;
+
+	for( int q = p_m->passes - 1; q >= 1; --q )
+	{
+		glActiveTexture( GL_TEXTURE0 + q );
+		glBindTexture( GL_TEXTURE_2D, 0 );
+		glDisable( GL_TEXTURE_2D );
+	}
+	glActiveTexture( GL_TEXTURE0 );
+
+	GLuint tex0 = tg[0] ? tg[0] : p->texture;
+	if( tex0 )
+	{
+		glEnable( GL_TEXTURE_2D );
+		glBindTexture( GL_TEXTURE_2D, tex0 );
+		poser_adressage( au[0], av[0], tex0 );
+	}
+	else
+	{
+		glDisable( GL_TEXTURE_2D );
+	}
+	glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+
+	glEnableClientState( GL_VERTEX_ARRAY );
+	glBindBuffer( GL_ARRAY_BUFFER, p->vbo );
+	glVertexPointer( 3, GL_FLOAT, 0, NULL );
+
+	if( p->uvbo )
+	{
+		glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+		glBindBuffer( GL_ARRAY_BUFFER, p->uvbo );
+		glTexCoordPointer( 2, GL_FLOAT, 0, NULL );
+	}
+	else
+	{
+		glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+	}
+
+	if( p->cbo )
+	{
+		glEnableClientState( GL_COLOR_ARRAY );
+		glBindBuffer( GL_ARRAY_BUFFER, p->cbo );
+		glColorPointer( 4, GL_UNSIGNED_BYTE, 0, NULL );
+	}
+	else
+	{
+		glDisableClientState( GL_COLOR_ARRAY );
+	}
+
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, p->ibo );
+	glDrawElements( GL_TRIANGLE_STRIP, p->num_indices, GL_UNSIGNED_SHORT, NULL );
+
+	glDisableClientState( GL_VERTEX_ARRAY );
+	glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+	glDisableClientState( GL_COLOR_ARRAY );
+	return true;
+}
+#endif
+
 static void dessiner_instances( void )
 {
+#if defined(__PLAT_LINUX__)
+	if( !s_inst_n || !s_cur_view_ok )
+		return;
+#else
 	if( !s_inst_n || !s_cur_view_ok || !g_vita_gxm_direct || !ShaderMateriauPret())
 		return;
+#endif
 	if(( s_idx_sect_gen != s_world_gen ) || !sp_idx_sect )
 	{
 		free( sp_idx_sect );
@@ -4026,6 +4537,7 @@ static void dessiner_instances( void )
 			++s_rej[2];
 			continue;
 		}
+		float M[16];
 		if( p_racine )
 		{
 			mat_mul( mvp, s_pv_shader, p_racine );
@@ -4054,18 +4566,24 @@ static void dessiner_instances( void )
 		}
 		const Mth::Vector &pos = g->VitaPos();
 		const float px = prive ? 0.0f : pos[X], py = prive ? 0.0f : pos[Y], pz = prive ? 0.0f : pos[Z];
-		const float M[16] = { c, 0.0f, -s, 0.0f,
-		                      0.0f, 1.0f, 0.0f, 0.0f,
-		                      s, 0.0f, c, 0.0f,
-		                      px, py, pz, 1.0f };
+		const float M_local[16] = { c, 0.0f, -s, 0.0f,
+		                            0.0f, 1.0f, 0.0f, 0.0f,
+		                            s, 0.0f, c, 0.0f,
+		                            px, py, pz, 1.0f };
+		memcpy( M, M_local, sizeof( M ));
 		mat_mul( mvp, s_pv_shader, M );
 		}
-		if( !ouvert )
-		{
-			ShaderMateriauDebut( mvp );
-			ouvert = true;
-		}
+		ShaderMateriauDebut( mvp );
+		ouvert = true;
 		GxmMateriauDebut( mvp );
+#if defined(__PLAT_LINUX__)
+		glMatrixMode( GL_MODELVIEW );
+		glPushMatrix();
+		if( p_racine )
+			glMultMatrixf( p_racine );
+		else
+			glMultMatrixf( M );
+#endif
 		// Scene du secteur source (#65) : un meme checksum peut exister dans
 		// deux scenes (la coquille de l'editeur de parc en partage un avec la
 		// bibliotheque de pieces). XBox clone le secteur d'UNE scene.
@@ -4080,9 +4598,9 @@ static void dessiner_instances( void )
 			}
 			// #29 : sans texture/UV mais avec couleurs de sommets -> texture
 			// blanche + UV nuls (prepares a la reconstruction de l'index).
-			const bool sans_tex = p->cbo && ( !p->texture || !p->uvbo );
-			if( !p->cbo || ( sans_tex && ( !s_tex_blanche_inst || !s_uv_nul
-			                               || ( p->num_vertices > s_uv_nul_nv ))))
+			const bool sans_tex = ( !p->texture || !p->uvbo );
+			if( sans_tex && ( !s_tex_blanche_inst || !s_uv_nul
+			                  || ( p->num_vertices > s_uv_nul_nv )))
 			{
 				++s_rej[4];
 				continue;
@@ -4121,12 +4639,89 @@ static void dessiner_instances( void )
 				tex[q] = tg[q] ? gxm_texture( tg[q], au[q], av[q] ) : NULL;
 				if( !tex[q] ) ok = false;
 			}
-			zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky );
+			zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky || ( p->alpha_cutoff > 0 ));
+#if defined(__PLAT_LINUX__)
+			const bool is_transp = (( p->mat_flags0 & 0x40 ) != 0 )
+			    || ( g_vita_melange_opaques && melange_hors_drapeau( p->blend, p->mat_flags0 ));
+			if( is_transp )
+			{
+				glEnable( GL_BLEND );
+				switch( p->blend & 0x1F )
+				{
+					case 1:  case 2: glBlendFunc( GL_SRC_ALPHA, GL_ONE ); break;
+					case 3:  case 4: glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA ); glBlendEquation( GL_FUNC_REVERSE_SUBTRACT ); break;
+					default: glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA ); break;
+				}
+				if(( p->blend != 3 ) && ( p->blend != 4 ))
+					glBlendEquation( GL_FUNC_ADD );
+			}
+			else
+			{
+				glDisable( GL_BLEND );
+			}
+
+			if( g_vita_alpha_test && ( p->alpha_cutoff > 0 ))
+			{
+				glEnable( GL_ALPHA_TEST );
+				glAlphaFunc( GL_GEQUAL, (float)p->alpha_cutoff / 255.0f );
+			}
+			else
+			{
+				glDisable( GL_ALPHA_TEST );
+			}
+
+			for( int q = m.passes - 1; q >= 0; --q )
+			{
+				glActiveTexture( GL_TEXTURE0 + q );
+				glBindTexture( GL_TEXTURE_2D, tg[q] );
+				poser_adressage( au[q], av[q], tg[q] );
+			}
+
+			glEnable( GL_TEXTURE_2D );
+			glEnableClientState( GL_VERTEX_ARRAY );
+			glBindBuffer( GL_ARRAY_BUFFER, m.vbo );
+			glVertexPointer( 3, GL_FLOAT, 0, NULL );
+			if( m.uvbo[0] )
+			{
+				glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+				glBindBuffer( GL_ARRAY_BUFFER, m.uvbo[0] );
+				glTexCoordPointer( 2, GL_FLOAT, 0, NULL );
+			}
+			else
+			{
+				glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+			}
+			if( m.cbo )
+			{
+				glEnableClientState( GL_COLOR_ARRAY );
+				glBindBuffer( GL_ARRAY_BUFFER, m.cbo );
+				glColorPointer( 4, GL_UNSIGNED_BYTE, 0, NULL );
+			}
+			else
+			{
+				glDisableClientState( GL_COLOR_ARRAY );
+				glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+			}
+			glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, p->ibo );
+			zbias_poser( p->zbias );
+			cull_poser( p->no_bfc || p->is_sky || ( p->alpha_cutoff > 0 ));
+			glDrawElements( GL_TRIANGLE_STRIP, p->num_indices, GL_UNSIGNED_SHORT, NULL );
+			++dessines;
+			glActiveTexture( GL_TEXTURE0 );
+#else
 			if( ok && GxmMateriauMaillage( &m, tex, p->ibo, p->num_indices,
 			                               GxmFamilleMelange( p->blend, (( p->mat_flags0 & 0x40 ) != 0 )
 			                                   || ( g_vita_melange_opaques && melange_hors_drapeau( p->blend, p->mat_flags0 )))))
 				++dessines;
+#endif
 		}
+#if defined(__PLAT_LINUX__)
+		glDisableClientState( GL_VERTEX_ARRAY );
+		glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+		glDisableClientState( GL_COLOR_ARRAY );
+		glMatrixMode( GL_MODELVIEW );
+		glPopMatrix();
+#endif
 	}
 	if( ouvert )
 	{
@@ -4189,7 +4784,11 @@ static void dessiner_instances( void )
 // sur un sol opaque, qui recouvre l'ombre recue dessous -- en 3 a 37 % des
 // points (SJ 37, SE 21, NJ 18, VC 15, NY 12, RU 12, HI 9). XBox y dessine
 // l'ombre (render.cpp:2793) ; "omt 0" ne l'y dessinait pas.
+#if defined(__PLAT_LINUX__)
+int g_vita_ombre_transp = 0;	// Skip 2nd shadow pass on translucent meshes on Linux to eliminate slowdowns
+#else
 int g_vita_ombre_transp = 1;	// "omt 0/1" (p_siodev.cpp)
+#endif
 
 #define OMB_MAX_CAND 256
 static int s_omb_cand[OMB_MAX_CAND];
@@ -4361,7 +4960,13 @@ static bool s_vcw_ecrit = false;		// des couleurs animees sont en place
 
 static inline unsigned char *vcw_donnees( GLuint nom )
 {
+#if defined(__PLAT_LINUX__)
+	// No Linux / desktop OpenGL (gl4es), GLuint Ã© um identificador numÃ©rico opaco
+	// e nÃ£o um ponteiro de memÃ³ria mapeada como no vitaGL.
+	return NULL;
+#else
 	return nom ? *(unsigned char * const *)nom : NULL;
+#endif
 }
 
 // --- Sommets de rendu des secteurs (#5), voir p_world_render.h --------------
@@ -4625,6 +5230,9 @@ static void vcw_couleur_seq( const SVitaVcw *w, int s, int maintenant, unsigned 
 
 static void vcw_mettre_a_jour( void )
 {
+#if defined(__PLAT_LINUX__)
+	return;
+#endif
 	if( !g_vita_vcw && !s_vcw_ecrit )
 		return;
 	const SceUInt64 t0 = sceKernelGetProcessTimeWide();
@@ -4744,11 +5352,15 @@ static void vcw_mettre_a_jour( void )
 //   2 axe quelconque : droite = at x axe, haut = axe, avant = axe x droite.
 // XBox le fait dans le vertex shader ; ici les 4 positions sont recrites en
 // place dans le vbo, comme les couleurs du vertex color wibble (memes
-// reserves sur l'image encore en vol). � bbd 0/1 � (p_siodev.cpp) : a 0, les
+// reserves sur l'image encore en vol). Â« bbd 0/1 Â» (p_siodev.cpp) : a 0, les
 // positions du fichier sont remises (rendu fige d'avant, pour comparer).
+#if defined(__PLAT_LINUX__)
+bool g_vita_billboards = false; // Usa posicoes estaticas de arvores/vegetacao para eliminar recalculos de vertices na CPU
+#else
 bool g_vita_billboards = true;
+#endif
 static bool s_bb_ecrit = false;
-// Copie des 4 positions dans le vbo du LOT du billboard (issue #69, � bbl �) :
+// Copie des 4 positions dans le vbo du LOT du billboard (issue #69, Â« bbl Â») :
 // ecrite meme quand le lot ne le dessine pas (bbl 0), pour qu'il soit a jour
 // au retour de la bascule.
 static inline void bb_ecrire_lot( const SWorldMesh *p, const float pos[4][3] )
@@ -4786,6 +5398,10 @@ static void bb_cross3( float *o, const float *a, const float *b )
 }
 static void bb_mettre_a_jour( Gfx::Camera *p_cam )
 {
+#if defined(__PLAT_LINUX__)
+	(void)p_cam;
+	return;
+#endif
 	if( !g_vita_billboards && !s_bb_ecrit )
 		return;
 	const bool restaurer = !g_vita_billboards;
@@ -4827,7 +5443,7 @@ static void bb_mettre_a_jour( Gfx::Camera *p_cam )
 			if( p->p_bb && p_pos )
 				memcpy( p_pos, p->p_bb->orig, sizeof( p->p_bb->orig ));
 			if( p->p_bb )
-				bb_ecrire_lot( p, p->p_bb->orig );		// #69, � bbl �
+				bb_ecrire_lot( p, p->p_bb->orig );		// #69, Â« bbl Â»
 		}
 		s_bb_ecrit = false;
 		VLOG( "SCN", "billboards : positions du fichier remises (%d)", s_bb_n );
@@ -4885,7 +5501,7 @@ static void bb_mettre_a_jour( Gfx::Camera *p_cam )
 				p_pos[3 * i + c] = pos[i][c];
 			}
 		}
-		bb_ecrire_lot( p, pos );		// #69, � bbl �
+		bb_ecrire_lot( p, pos );		// #69, Â« bbl Â»
 	}
 }
 
@@ -4919,7 +5535,11 @@ static void bb_mettre_a_jour( Gfx::Camera *p_cam )
 // (objets de niveau, editeur de parc) partagent ces tampons : ils suivent la
 // teinte de leur secteur source (sur Xbox, sMesh::Clone recopie la teinte du
 // moment, mesh.cpp:1622). " tsc 0/1 " (p_siodev.cpp) : bascule a chaud.
+#if defined(__PLAT_LINUX__)
+bool g_vita_teinte_scene = false; // Desativado no R36S para eliminar gargalo de 118ms de CPU e prevenir escurecimento de fachadas
+#else
 bool g_vita_teinte_scene = true;
+#endif
 
 static void facteur_teinte( const float c0[3], unsigned int flags0,
                             const unsigned char dem[4], float f[3] )
@@ -5262,6 +5882,10 @@ void TeinterSecteur( unsigned int checksum, const unsigned char rgb[3], bool neu
 // pendant g_vita_teinte_budget_us au plus (au moins une entree).
 void TeinteSceneAvancer( void )
 {
+#if defined(__PLAT_LINUX__)
+	// No Linux, as operaÃ§Ãµes de escrita direta em VBOs da GPU nÃ£o se aplicam
+	return;
+#endif
 	if( !s_file_n )
 		return;
 	if( !idx_teinte_a_jour() || !s_file_n )
@@ -5333,14 +5957,14 @@ void TeinteSceneReappliquer( void )
 	VLOG( "SCN", "teinte de scene : %s", g_vita_teinte_scene ? "OUI" : "non" );
 }
 
-// --- Decoupe du poste � monde � (issue #69) ---------------------------------
+// --- Decoupe du poste Â« monde Â» (issue #69) ---------------------------------
 // [PROF] monde = CEngine::sRenderWorld (nx.cpp:259) : mises a jour
 // (process_particles, UpdateParticles, meteo, imposteurs, VC lights) PUIS
 // s_plat_render_world (p_nx.cpp) = RenderWorld + particules + morceaux
 // translucides des modeles. Les journaux [SHD] ne couvrent qu'une partie de
 // RenderWorld ; ceci couvre TOUT s_plat_render_world, etape par etape. La
-// difference � monde - somme � est le temps des mises a jour du moteur.
-bool g_vita_prof_monde = true;		// � pmd 0/1 �
+// difference Â« monde - somme Â» est le temps des mises a jour du moteur.
+bool g_vita_prof_monde = true;		// Â« pmd 0/1 Â»
 static SceUInt64 s_mw_acc[MW_N];
 static SceUInt64 s_mw_t = 0;
 static int       s_mw_cur = -1;
@@ -5389,7 +6013,7 @@ static inline int mw_de_passe( int pass, int rang_ciel, int rang_opaque, int ran
 }
 
 // Pourquoi un translucide visible n'est-il pas dans un lot (issue #69) ?
-// Memes criteres que construire_lots, NON exclusifs, plus � z-bias seul �
+// Memes criteres que construire_lots, NON exclusifs, plus Â« z-bias seul Â»
 // (le z-bias est la seule exclusion : il entrerait dans un lot qui
 // admettrait les decalques). Compte par maillage de la passe translucide.
 enum { HL_CIEL, HL_SANS, HL_ZBIAS, HL_ZBIAS_SEUL, HL_UVW, HL_VCW, HL_BB, HL_REFLET,
@@ -5434,7 +6058,7 @@ void RenderWorld( void )
 	if( s_num_world == 0 )
 		return;
 
-	// � zbl � change (issue #69) : les maillages des lots a z-bias passent du
+	// Â« zbl Â» change (issue #69) : les maillages des lots a z-bias passent du
 	// lot au dessin un par un, ou l'inverse. Ici, aucun travailleur ne lit
 	// sp_world (les listes de l'image precedente ont ete attendues) ; la
 	// generation force le tableau compact et les candidats a relire dans_lot.
@@ -5451,7 +6075,7 @@ void RenderWorld( void )
 		++s_world_gen;
 		VLOG( "SCN", "lots a z-bias (zbl) : %s, %d maillages", s_zbl_applique ? "OUI" : "non", n );
 	}
-	// � bbl � change (issue #69) : meme mecanique que � zbl � ci-dessus.
+	// Â« bbl Â» change (issue #69) : meme mecanique que Â« zbl Â» ci-dessus.
 	if( g_vita_bbl != s_bbl_applique )
 	{
 		s_bbl_applique = g_vita_bbl;
@@ -5475,8 +6099,8 @@ void RenderWorld( void )
 	VitaMondeEtape( MW_VUE );
 
 	// Battement plutot qu'une trace unique : la camera n'existe qu'une fois le
-	// skater cree, donc bien apres le premier rendu. Une trace « une seule
-	// fois » disait « camera ABSENTE » pour toujours, alors que la situation
+	// skater cree, donc bien apres le premier rendu. Une trace Ã‚Â« une seule
+	// fois Ã‚Â» disait Ã‚Â« camera ABSENTE Ã‚Â» pour toujours, alors que la situation
 	// avait change trois secondes plus tard.
 	{
 		static int s_f = 0;
@@ -5654,7 +6278,7 @@ void RenderWorld( void )
 
 		// Une matrice de vue degeneree (colonnes nulles, base non orthonormee)
 		// aplatirait tout le decor en un point sans qu'aucun compteur ne s'en
-		// apercoive : « 326 maillages rendus » resterait vrai. On journalise
+		// apercoive : Ã‚Â« 326 maillages rendus Ã‚Â» resterait vrai. On journalise
 		// donc la base elle-meme, pas seulement la position.
 		{
 			static int s_v = 0;
@@ -5771,7 +6395,7 @@ void RenderWorld( void )
 	const int RANG_OPAQUE = g_vita_sky_last ? 0 : 1;
 	const int RANG_CIEL   = g_vita_sky_last ? 1 : 0;
 	const int RANG_TRANSP = 2;
-	// QUATRIEME passe : les translucides que le materiau marque � tries �.
+	// QUATRIEME passe : les translucides que le materiau marque Â« tries Â».
 	// [SOURCE] XBox/NX/render.cpp:2620 -- l'etage semi-transparent se deroule
 	// en trois temps, dont un TRIE PAR PROFONDEUR a chaque image. Nous en
 	// faisons une passe a part, ce qui revient au meme : nos translucides non
@@ -5785,7 +6409,7 @@ void RenderWorld( void )
 	{
 	const int mw_passe = mw_de_passe( pass, RANG_CIEL, RANG_OPAQUE, RANG_TRANSP );
 	VitaMondeEtape( mw_passe );
-	// Culling et repartition : UNE fois par image. � prep 0 � les refait a
+	// Culling et repartition : UNE fois par image. Â« prep 0 Â» les refait a
 	// chaque passe, ce qui reproduit exactement le cout de l'ancien code.
 	if(( pass == 0 ) || !g_vita_prepasse )
 	{
@@ -5796,9 +6420,13 @@ void RenderWorld( void )
 		const SceUInt64 t_l0 = sceKernelGetProcessTimeWide();
 		// Memes conditions que lots_par_shader de la passe opaque, plus bas :
 		// alors TOUS les opaques en lot sont dessines par leur lot.
+#if defined(__PLAT_LINUX__)
+		const bool sauter = g_vita_lots && sp_lots && s_cur_view_ok && g_vita_lots_multi;
+#else
 		const bool sauter = g_vita_lots && sp_lots && s_cur_view_ok
 		    && (( g_vita_shader_decor == 1 ) || ( g_vita_shader_decor == 2 ))
 		    && ShaderDecorPret() && ShaderMateriauPret() && g_vita_lots_multi;
+#endif
 		listes_mt_attendre();
 		if( !(( pass == 0 ) && g_vita_prepasse
 		       && listes_mt_lancer( RANG_CIEL, RANG_OPAQUE, RANG_TRANSP, RANG_TRI, sauter )))
@@ -5832,12 +6460,12 @@ void RenderWorld( void )
 
 		// CIEL A L'INFINI, avec le test de profondeur ACTIF.
 		//
-		// [VERIFIE] ce que faisait la version precedente -- � dessine en
-		// premier, sans test ni ecriture de profondeur � -- ne pouvait pas
+		// [VERIFIE] ce que faisait la version precedente -- Â« dessine en
+		// premier, sans test ni ecriture de profondeur Â» -- ne pouvait pas
 		// marcher : le compteur ORD montre que 176 maillages de MODELE sont
 		// deja dessines quand RenderWorld demarre. Le ciel les recouvrait
 		// donc purement et simplement. C'est ce que l'humain decrivait :
-		// � tout ce qui bouge est une skybox �. Le decor, lui, allait bien --
+		// Â« tout ce qui bouge est une skybox Â». Le decor, lui, allait bien --
 		// il est dessine APRES, dans les passes 1 et 2.
 		//
 		// Deux enquetes ont echoue sur ce defaut en cherchant un etat de
@@ -5857,8 +6485,8 @@ void RenderWorld( void )
 
 		// MAIS glDepthRangef n'agit qu'APRES le decoupage : tout ce qui est
 		// au-dela du plan lointain etait coupe avant. Le dome est plus grand
-		// que la distance de rendu -- d'ou un ciel � qui ne s'affiche que sous
-		// certains angles �, des trapezes blancs, le fond visible a travers.
+		// que la distance de rendu -- d'ou un ciel Â« qui ne s'affiche que sous
+		// certains angles Â», des trapezes blancs, le fond visible a travers.
 		// XBox/NX/render.cpp:1810 le fait DANS la projection : z = w (ici
 		// 0,99999 w, juste sous le plan lointain). Restaure en fin de passe.
 		{
@@ -5876,13 +6504,13 @@ void RenderWorld( void )
 	{
 		// Retour au decor : on rend TOUT ce que la passe du ciel a change.
 		//
-		// Mesure : avec � sky 0 � les personnages retrouvaient leurs textures,
-		// avec � sky 1 � ils portaient celle du ciel. Restaurer la liaison en
+		// Mesure : avec Â« sky 0 Â» les personnages retrouvaient leurs textures,
+		// avec Â« sky 1 Â» ils portaient celle du ciel. Restaurer la liaison en
 		// fin de RenderWorld ne suffisait pas -- le decor, dessine entre les
 		// deux, remettait ses propres textures, mais le tableau de coordonnees
 		// et l'unite active restaient ceux du ciel.
 		// Profondeur rendue a son etat normal : plage complete, test du decor
-		// (LEQUAL comme XBox, � zeq �).
+		// (LEQUAL comme XBox, Â« zeq Â»).
 		glDepthRangef( 0.0f, 1.0f );
 		glDepthFunc( profondeur_decor());
 		glEnable( GL_DEPTH_TEST );
@@ -5999,7 +6627,6 @@ void RenderWorld( void )
 		const bool shd_mat = shd && ( g_vita_shader_decor != 5 ) && ShaderMateriauPret();
 		if( shd )
 		{
-			while( glGetError() != GL_NO_ERROR ) {}
 			if( shd_mat )
 				ShaderMateriauDebut( s_pv_shader );
 			else
@@ -6008,7 +6635,7 @@ void RenderWorld( void )
 			{
 				GxmMateriauDebut( s_pv_shader );
 				s_gxd_on = true;
-				// Etape 0 des listes de commandes (� gcl �) : les lots opaques
+				// Etape 0 des listes de commandes (Â« gcl Â») : les lots opaques
 				// sont enregistres puis executes d'un bloc.
 				s_liste_lots = GxmListeDebut();
 				if( !s_liste_lots )
@@ -6027,17 +6654,22 @@ void RenderWorld( void )
 		{
 			const int l = ( g_vita_tri_lots && sp_ordre_lots && ( s_nb_ordre_lots == s_num_lots )) ? sp_ordre_lots[ll] : ll;
 			SLot *L = &sp_lots[l];
-			// Lot a z-bias avec � zbl 0 � : ses maillages ne sont pas dans_lot,
+			// Lot a z-bias avec Â« zbl 0 Â» : ses maillages ne sont pas dans_lot,
 			// ils sont dessines un par un comme avant (issue #69).
 			if( L->zbias && !s_zbl_applique )
 				continue;
-			// Idem pour un lot de billboards avec � bbl 0 � (issue #69).
+			// Idem pour un lot de billboards avec Â« bbl 0 Â» (issue #69).
 			if( L->bb && !s_bbl_applique )
 				continue;
 			// Un lot multi-passes ne se dessine que par le shader : en pipeline
 			// fixe, ses maillages sont repris un par un plus bas.
+#if defined(__PLAT_LINUX__)
+			if( L->multi && !g_vita_lots_multi )
+				continue;
+#else
 			if( L->multi && ( !shd_mat || !g_vita_lots_multi ))
 				continue;
+#endif
 			const bool transp = (( L->mat_flags0 & 0x40 ) != 0 )
 			    || ( g_vita_melange_opaques && melange_hors_drapeau( L->blend, L->mat_flags0 ));
 			const bool voulu  = g_vita_transp_flag ? transp
@@ -6082,14 +6714,6 @@ void RenderWorld( void )
 			if( shd )
 			{
 				++s_shd_lots;
-				const GLenum e = glGetError();
-				if( e != GL_NO_ERROR )
-				{
-					++s_shd_err;
-					s_shd_err_tex  = (unsigned)L->texture;
-					s_shd_err_code = (unsigned)e;
-					s_shd_err_idx  = L->num_indices;
-				}
 			}
 		}
 
@@ -6168,12 +6792,18 @@ void RenderWorld( void )
 			VitaMondeEtape( mw_passe );
 		}
 	}
+#if defined(__PLAT_LINUX__)
+	const bool lots_par_shader = g_vita_lots && sp_lots && s_cur_view_ok
+	    && (( pass == RANG_OPAQUE ) || ( pass == RANG_TRANSP ))
+	    && g_vita_lots_multi;
+#else
 	const bool lots_par_shader = g_vita_lots && sp_lots && s_cur_view_ok
 	    && (( pass == RANG_OPAQUE ) || ( pass == RANG_TRANSP ))
 	    && (( g_vita_shader_decor == 1 )
 	        || (( g_vita_shader_decor == 2 ) && ( pass == RANG_OPAQUE ))
 	        || (( g_vita_shader_decor == 3 ) && ( pass == RANG_TRANSP )))
 	    && ShaderDecorPret() && ShaderMateriauPret() && g_vita_lots_multi;
+#endif
 	const bool opaque_groupe = ( pass == RANG_OPAQUE )
 	    && (( g_vita_shader_decor == 1 ) || ( g_vita_shader_decor == 2 ))
 	    && !g_vita_mat_debug && !g_vita_id_debug
@@ -6234,11 +6864,17 @@ void RenderWorld( void )
 	if( pass == 0 )
 		++s_image_courante;
 	// Lots translucides : dessines a leur place, par le shader materiau.
+#if defined(__PLAT_LINUX__)
+	const bool lots_transp_shd = ( pass == RANG_TRANSP ) && g_vita_lots && sp_lots
+	    && g_vita_lots_transp
+	    && ( s_num_lots <= MAX_LOTS_TRACES ) && s_cur_view_ok;
+#else
 	const bool lots_transp_shd = ( pass == RANG_TRANSP ) && g_vita_lots && sp_lots
 	    && g_vita_lots_transp
 	    && ( s_num_lots <= MAX_LOTS_TRACES ) && s_cur_view_ok
 	    && (( g_vita_shader_decor == 1 ) || ( g_vita_shader_decor == 3 ))
 	    && ShaderMateriauPret();
+#endif
 	bool shd_transp_actif = false;
 	if( pass == RANG_OPAQUE )
 		VitaMondeEtape( MW_PASSE1 );
@@ -6261,8 +6897,13 @@ void RenderWorld( void )
 		// de son premier maillage dans la liste triee par draw_order. Un lot a
 		// un seul materiau, donc un seul draw_order : l'ordre Xbox est tenu,
 		// et 545 dessins un par un redeviennent quelques dizaines (mesure).
+#if defined(__PLAT_LINUX__)
+		if(( pass == RANG_TRANSP ) && g_vita_lots && p->dans_lot && ( p->lot_idx >= 0 )
+		    && ( p->lot_idx < s_num_lots ) && ( !p->lot_multi || g_vita_lots_multi ) && lots_transp_shd )
+#else
 		if(( pass == RANG_TRANSP ) && g_vita_lots && p->dans_lot && ( p->lot_idx >= 0 )
 		    && ( p->lot_idx < s_num_lots ) && !p->lot_multi && lots_transp_shd )
+#endif
 		{
 			SLot *L = &sp_lots[p->lot_idx];
 			if( s_lot_image[p->lot_idx] != s_image_courante )
@@ -6270,22 +6911,23 @@ void RenderWorld( void )
 				s_lot_image[p->lot_idx] = s_image_courante;
 				if( !( g_vita_cull && s_cur_view_ok && !box_visible( L->bb_min, L->bb_max )))
 				{
+					const bool use_shd_transp = ShaderMateriauPret();
 					// Le programme reste actif d'un lot au suivant ; il n'est
 					// rendu qu'au premier maillage qui passe par le pipeline fixe.
-					if( !shd_transp_actif )
+					if( use_shd_transp && !shd_transp_actif )
 					{
 						ShaderMateriauDebut( s_pv_shader );
 						shd_transp_actif = true;
 					}
 					// Chemin GXM direct : ouvert pour une suite de lots,
 					// referme avant le prochain maillage dessine par vitaGL.
-					if( g_vita_gxm_direct && !s_gxd_on )
+					if( use_shd_transp && g_vita_gxm_direct && !s_gxd_on )
 					{
 						GxmMateriauDebut( s_pv_shader );
 						s_gxd_on = true;
 					}
 					{
-						const int na = dessiner_lot( L, true, true, true, drawn );
+						const int na = dessiner_lot( L, true, use_shd_transp, use_shd_transp, drawn );
 						s_appels_lots_transp += na;
 						if( L->bb )
 							s_bbl_appels += na;		// issue #69
@@ -6300,6 +6942,34 @@ void RenderWorld( void )
 			continue;
 		}
 		// Couche en REFLET (issue #5), toutes passes du decor : chemin GXM, seul
+		// a savoir generer les coordonnees de reflet.
+#if defined(__PLAT_LINUX__)
+		if( g_vita_env && p->nbo && ( pass != RANG_CIEL )
+		    && s_cur_view_ok && !g_vita_id_debug && ShaderMateriauPret())
+		{
+			SShaderMateriau m;
+			if( materiau_env_prepare( p, &m ))
+			{
+				const GLuint tg[4] = { p->texture, p->texture_env ? p->texture_env : p->texture2,
+				                       p->texture_x[0] ? p->texture_x[0] : p->texture_envx[0],
+				                       p->texture_x[1] ? p->texture_x[1] : p->texture_envx[1] };
+				const unsigned char au[4] = { p->addr_u, p->addr2_u, p->addr_xu[0], p->addr_xu[1] };
+				const unsigned char av[4] = { p->addr_v, p->addr2_v, p->addr_xv[0], p->addr_xv[1] };
+				if( !shd_transp_actif )
+				{
+					ShaderMateriauDebut( s_pv_shader );
+					shd_transp_actif = true;
+				}
+				if( linux_dessiner_shader_maillage( p, &m, tg, au, av, p->blend, pass != RANG_OPAQUE ) )
+				{
+					++s_env_dessines;
+					++drawn;
+					continue;
+				}
+			}
+		}
+#else
+/ Couche en REFLET (issue #5), toutes passes du decor : chemin GXM, seul
 		// a savoir generer les coordonnees de reflet.
 		if( g_vita_env && p->nbo && ( pass != RANG_CIEL )
 		    && g_vita_gxm_direct && s_cur_view_ok && !g_vita_id_debug && ShaderMateriauPret())
@@ -6333,7 +7003,7 @@ void RenderWorld( void )
 						s_gxd_on = true;
 					}
 					GxmMateriauVue( s_view );
-					zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky );
+					zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky || ( p->alpha_cutoff > 0 ));
 					if( GxmMateriauMaillage( &m, tex, p->ibo, p->num_indices,
 					                         GxmFamilleMelange( p->blend, pass != RANG_OPAQUE )))
 					{
@@ -6344,7 +7014,42 @@ void RenderWorld( void )
 				}
 			}
 		}
-		// UV WIBBLE d'un maillage que les chemins shader ci-dessous ne prennent
+#endif
+		//// UV WIBBLE d'un maillage que les chemins shader ci-dessous ne prennent
+		// pas (materiau a une couche : pipeline fixe) -- issue #43.
+#if defined(__PLAT_LINUX__)
+		if( g_vita_uvw && p->uvw && ( pass != RANG_CIEL ) && p->texture && p->uvbo && p->cbo
+		    && s_cur_view_ok && !g_vita_id_debug && ShaderMateriauPret()
+		    && !( g_vita_mat_debug && ( p->num_passes > 1 ))
+		    && !materiau_shader_ok( p, pass == RANG_OPAQUE ))
+		{
+			SShaderMateriau m;
+			materiau_shader_prepare( p, &m );
+			if( !p->cbo_brut )
+			{
+				m.cbo = p->cbo;
+				m.c[0][0] = m.c[0][1] = m.c[0][2] = 0.5f;
+			}
+			const GLuint tg[4] = { p->texture, p->texture2, p->texture_x[0], p->texture_x[1] };
+			const unsigned char au[4] = { p->addr_u, p->addr2_u, p->addr_xu[0], p->addr_xu[1] };
+			const unsigned char av[4] = { p->addr_v, p->addr2_v, p->addr_xv[0], p->addr_xv[1] };
+			if( m.cbo )
+			{
+				if( !shd_transp_actif )
+				{
+					ShaderMateriauDebut( s_pv_shader );
+					shd_transp_actif = true;
+				}
+				if( linux_dessiner_shader_maillage( p, &m, tg, au, av, p->blend, pass != RANG_OPAQUE ) )
+				{
+					++s_uvw_dessines;
+					++drawn;
+					continue;
+				}
+			}
+		}
+#else
+/ UV WIBBLE d'un maillage que les chemins shader ci-dessous ne prennent
 		// pas (materiau a une couche : pipeline fixe) -- issue #43. Le decalage
 		// est dans le vertex shader (uW), d'ou le chemin GXM. Les materiaux
 		// multi-passes recoivent le leur par materiau_shader_prepare, dans la
@@ -6386,7 +7091,7 @@ void RenderWorld( void )
 					GxmMateriauDebut( s_pv_shader );
 					s_gxd_on = true;
 				}
-				zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky );
+				zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky || ( p->alpha_cutoff > 0 ));
 				if( GxmMateriauMaillage( &m, tex, p->ibo, p->num_indices,
 				                         GxmFamilleMelange( p->blend, pass != RANG_OPAQUE )))
 				{
@@ -6396,11 +7101,37 @@ void RenderWorld( void )
 				}
 			}
 		}
+#endif
 		// Maillage translucide SEUL (lot multi-passes, ou hors lot) : dans la
 		// session GXM des lots plutot que par vitaGL (issue #18). Chaque
 		// detour par vitaGL fermait et rouvrait la session : ~15-20 us par
 		// maillage, ~140 par image en V1.
 		bool gxs_essaye = false;
+#if defined(__PLAT_LINUX__)
+		if(( pass == RANG_TRANSP ) && lots_transp_shd
+		    && !g_vita_id_debug && !( g_vita_mat_debug && ( p->num_passes > 1 ))
+		    && materiau_shader_ok( p, false ))
+		{
+			gxs_essaye = true;
+			SShaderMateriau m;
+			materiau_shader_prepare( p, &m );
+			const GLuint tex_gl[4] = { p->texture, p->texture2, p->texture_x[0], p->texture_x[1] };
+			const unsigned char au[4] = { p->addr_u, p->addr2_u, p->addr_xu[0], p->addr_xu[1] };
+			const unsigned char av[4] = { p->addr_v, p->addr2_v, p->addr_xv[0], p->addr_xv[1] };
+			if( !shd_transp_actif )
+			{
+				ShaderMateriauDebut( s_pv_shader );
+				shd_transp_actif = true;
+			}
+			if( linux_dessiner_shader_maillage( p, &m, tex_gl, au, av, p->blend, true ) )
+			{
+				++s_transp_seuls;
+				if( !p->dans_lot ) ++s_transp_hors_lot;
+				++drawn;
+				continue;
+			}
+		}
+#else
 		if(( pass == RANG_TRANSP ) && g_vita_gxm_seuls && g_vita_gxm_direct && lots_transp_shd
 		    && !g_vita_id_debug && !( g_vita_mat_debug && ( p->num_passes > 1 ))
 		    && materiau_shader_ok( p, false ))
@@ -6431,7 +7162,7 @@ void RenderWorld( void )
 					GxmMateriauDebut( s_pv_shader );
 					s_gxd_on = true;
 				}
-				zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky );
+				zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky || ( p->alpha_cutoff > 0 ));
 				if( GxmMateriauMaillage( &m, tex, p->ibo, p->num_indices,
 				                         GxmFamilleMelange( p->blend, true )))
 				{
@@ -6443,7 +7174,8 @@ void RenderWorld( void )
 				}
 			}
 		}
-		// � gxt 1 � (issue #18) : ce que les chemins GXM ci-dessus laissent
+#endif
+		// Â« gxt 1 Â» (issue #18) : ce que les chemins GXM ci-dessus laissent
 		// encore a vitaGL en passe translucide et en passe triee --
 		//  - materiau a UNE couche hors lot (decalques a z-bias, couleurs de
 		//    sommets animees, lots non dessines en lot), dessine jusqu'ici
@@ -6457,9 +7189,62 @@ void RenderWorld( void )
 		// Aucune allocation, aucune liberation. Image identique au chemin
 		// remplace : en une couche, l'alpha de sortie est celui du pipeline
 		// fixe (texture x sommets, pas d'alpha FIXE, alpha des sommets ignore
-		// seulement avec � iva �), et BRIGHTEN_FIXED prend le melange de
+		// seulement avec Â« iva Â»), et BRIGHTEN_FIXED prend le melange de
 		// BRIGHTEN, comme la table de RenderWorld.
 		bool gxt_essaye = false;
+#if defined(__PLAT_LINUX__)
+		if((( pass == RANG_TRANSP ) || ( pass == RANG_TRI )) && g_vita_gxm_transp && !gxs_essaye
+		    && s_cur_view_ok && !g_vita_id_debug && !g_vita_mat_debug
+		    && (( g_vita_shader_decor == 1 ) || ( g_vita_shader_decor == 3 ))
+		    && ShaderMateriauPret() && !p->is_sky && p->texture && p->uvbo && p->cbo && !p->uvw
+		    && !( p->nbo && ( p->texture_env || p->env0 )))
+		{
+			const bool deux = materiau_shader_ok( p, false );
+			const bool une = !deux && !( g_vita_multitex && p->texture2 && p->uvbo2 );
+			if( une || ( deux && ( pass == RANG_TRI )))
+			{
+				gxt_essaye = true;
+				SShaderMateriau m;
+				materiau_shader_prepare( p, &m );
+				if( une )
+				{
+					m.passes = 1;
+					m.uvbo[1] = m.uvbo[2] = m.uvbo[3] = 0;
+					if( !p->cbo_brut )
+					{
+						m.cbo = p->cbo;
+						m.c[0][0] = m.c[0][1] = m.c[0][2] = 0.5f;
+					}
+					if( !g_vita_alpha_fixe_une )
+						m.fixe0 = false;
+					m.ignore_alpha[0] = g_vita_ignore_vertex_alpha
+					                    && (( p->mat_flags0 & 0x1000 ) != 0 );
+					m.seuil = seuil_effectif( p->alpha_cutoff, p->texture, 0,
+					                          m.ignore_alpha[0] );
+				}
+				const GLuint tg[4] = { p->texture, p->texture2, p->texture_x[0], p->texture_x[1] };
+				const unsigned char au[4] = { p->addr_u, p->addr2_u, p->addr_xu[0], p->addr_xu[1] };
+				const unsigned char av[4] = { p->addr_v, p->addr2_v, p->addr_xv[0], p->addr_xv[1] };
+				if( !shd_transp_actif )
+				{
+					ShaderMateriauDebut( s_pv_shader );
+					shd_transp_actif = true;
+				}
+				if( linux_dessiner_shader_maillage( p, &m, tg, au, av, p->blend, pass != RANG_OPAQUE ) )
+				{
+					++s_gxt_dessines;
+					if( pass == RANG_TRANSP )
+					{
+						++s_transp_seuls;
+						if( !p->dans_lot ) ++s_transp_hors_lot;
+					}
+					++drawn;
+					continue;
+				}
+			}
+		}
+#else
+bool gxt_essaye = false;
 		if((( pass == RANG_TRANSP ) || ( pass == RANG_TRI )) && g_vita_gxm_transp && !gxs_essaye
 		    && g_vita_gxm_direct && s_cur_view_ok && !g_vita_id_debug && !g_vita_mat_debug
 		    && (( g_vita_shader_decor == 1 ) || ( g_vita_shader_decor == 3 ))
@@ -6528,7 +7313,7 @@ void RenderWorld( void )
 						GxmMateriauDebut( s_pv_shader );
 						s_gxd_on = true;
 					}
-					zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky );
+					zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky || ( p->alpha_cutoff > 0 ));
 					if( GxmMateriauMaillage( &m, tex, p->ibo, p->num_indices, famille ))
 					{
 						++s_gxt_dessines;
@@ -6544,6 +7329,8 @@ void RenderWorld( void )
 				}
 			}
 		}
+		
+#endif
 		if( s_gxd_on )
 		{
 			GxmMateriauFin();
@@ -6566,7 +7353,7 @@ void RenderWorld( void )
 			continue;
 
 		// Combien de maillages de ciel franchissent reellement les filtres ?
-		// � la scene est chargee � et � elle est dessinee � sont deux choses
+		// Â« la scene est chargee Â» et Â« elle est dessinee Â» sont deux choses
 		// differentes, et seul un compteur les separe.
 		if( p->is_sky )
 		{
@@ -6585,7 +7372,7 @@ void RenderWorld( void )
 		// Issue #42 : la couche de nuages du ciel est un materiau BLEND
 		// (FL_sky 494bfec8, DXT5, alpha progressif). Dessinee sans melange,
 		// seul le test alpha a 1/255 la decoupait -- en blocs 4x4 du DXT5 :
-		// les � blocs bleus et blancs autour des nuages �. Le ciel opaque
+		// les Â« blocs bleus et blancs autour des nuages Â». Le ciel opaque
 		// (draw_order 0) reste sans melange et passe en premier (tri).
 		if( pass == RANG_CIEL )
 		{
@@ -6606,6 +7393,16 @@ void RenderWorld( void )
 				case 1:  case 2:				// ADD, ADD_FIXED
 					glBlendFunc( GL_SRC_ALPHA, GL_ONE );
 					break;
+#if defined(__PLAT_LINUX__)
+				case 3:  case 4:				// SUBTRACT, SUB_FIXED
+					glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+					glBlendEquation( GL_FUNC_ADD );
+					break;
+				case 7:  case 8:				// MODULATE
+					glBlendFunc( GL_DST_COLOR, GL_ZERO );
+					glBlendEquation( GL_FUNC_ADD );
+					break;
+#else
 				case 3:  case 4:				// SUBTRACT, SUB_FIXED
 					glBlendFunc( GL_SRC_ALPHA, GL_ONE );
 					glBlendEquation( GL_FUNC_REVERSE_SUBTRACT );
@@ -6613,6 +7410,7 @@ void RenderWorld( void )
 				case 7:  case 8:				// MODULATE
 					glBlendFunc( GL_ZERO, GL_SRC_ALPHA );	// MODULATE : XBox render.cpp
 					break;
+#endif
 				case 9:  case 10:				// BRIGHTEN
 					glBlendFunc( GL_DST_COLOR, GL_ONE );
 					break;
@@ -6626,10 +7424,11 @@ void RenderWorld( void )
 
 		// [C] Test alpha. XBox le pose depuis le materiau
 		// (material.cpp:302 -> RS_ALPHACUTOFF -> D3DRS_ALPHAREF), avec la
-		// semantique � garder les pixels d'alpha >= seuil �. 1169 des 1424
+		// semantique Â« garder les pixels d'alpha >= seuil Â». 1169 des 1424
 		// materiaux de New Jersey en portent un ; c'est lui qui decoupe les
 		// grillages et les feuillages sans les rendre translucides.
-		if( g_vita_alpha_test && ( p->alpha_cutoff > 0 ))
+		if( g_vita_alpha_test && ( p->alpha_cutoff > 0 )
+		    && !( ( p->blend2 == 12 || p->blend2 == 13 ) && ( pass == RANG_OPAQUE ) ))
 		{
 			glEnable( GL_ALPHA_TEST );
 			glAlphaFunc( GL_GEQUAL, (float)p->alpha_cutoff / 255.0f );
@@ -6658,7 +7457,7 @@ void RenderWorld( void )
 			glBindBuffer( GL_ARRAY_BUFFER, p->vbo );
 			glVertexPointer( 3, GL_FLOAT, 0, NULL );
 			glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, p->ibo );
-			zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky );
+			zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky || ( p->alpha_cutoff > 0 ));
 			glDrawElements( GL_TRIANGLE_STRIP, p->num_indices,
 			                GL_UNSIGNED_SHORT, NULL );
 			continue;
@@ -6689,7 +7488,7 @@ void RenderWorld( void )
 		{
 			glEnable( GL_TEXTURE_2D );
 			glBindTexture( GL_TEXTURE_2D, p->texture );
-			poser_adressage( p->addr_u, p->addr_v );
+			poser_adressage( p->addr_u, p->addr_v, p->texture );
 			glEnableClientState( GL_TEXTURE_COORD_ARRAY );
 			glBindBuffer( GL_ARRAY_BUFFER, p->uvbo );
 			glTexCoordPointer( 2, GL_FLOAT, 0, NULL );
@@ -6699,6 +7498,17 @@ void RenderWorld( void )
 			// tableau de couleurs prime et la teinte y est deja cuite.
 			glColor4f( p->mat_r * p->teinte_f[0], p->mat_g * p->teinte_f[1],
 			           p->mat_b * p->teinte_f[2], 1.0f );	// teinte de scene (#63)
+		}
+		else if( p->texture2 && p->uvbo2 )
+		{
+			glEnable( GL_TEXTURE_2D );
+			glBindTexture( GL_TEXTURE_2D, p->texture2 );
+			poser_adressage( p->addr2_u, p->addr2_v, p->texture2 );
+			glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+			glBindBuffer( GL_ARRAY_BUFFER, p->uvbo2 );
+			glTexCoordPointer( 2, GL_FLOAT, 0, NULL );
+			glColor4f( p->mat_r * p->teinte_f[0], p->mat_g * p->teinte_f[1],
+			           p->mat_b * p->teinte_f[2], 1.0f );
 		}
 		else
 		{
@@ -6723,7 +7533,10 @@ void RenderWorld( void )
 			glBindBuffer( GL_ARRAY_BUFFER, 0 );
 		}
 		else
+		{
 			glDisableClientState( GL_COLOR_ARRAY );
+			glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+		}
 
 		// --- DEUXIEME COUCHE, sur la seconde unite de texture ---------------
 		//
@@ -6731,18 +7544,14 @@ void RenderWorld( void )
 		// genere (render.cpp:302). Le pipeline fixe fait la meme chose avec
 		// deux unites, ce que la sonde du demarrage a verifie par la mesure :
 		// MODULATE et ADD donnent exactement les valeurs attendues.
-		const bool couche2 = ( g_vita_multitex && !marque && p->texture2 && p->uvbo2 );
+		const bool couche2 = ( g_vita_multitex && !marque && p->texture && p->texture2 && p->uvbo2 );
 		if( couche2 )
 		{
 			glActiveTexture( GL_TEXTURE1 );
 			glEnable( GL_TEXTURE_2D );
 			glBindTexture( GL_TEXTURE_2D, p->texture2 );
-			poser_adressage( p->addr2_u, p->addr2_v );
-			if(( p->blend2 == 12 ) || ( p->blend2 == 13 ))
-				poser_masque_precedent( p->blend2 == 13 );
-			else
-				glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,
-				           env_mode_pour( p->blend2 ));
+			poser_adressage( p->addr2_u, p->addr2_v, p->texture2 );
+			poser_env_couche2( p->blend2, p->c1, p->texture2 );
 			glClientActiveTexture( GL_TEXTURE1 );
 			glEnableClientState( GL_TEXTURE_COORD_ARRAY );
 			glBindBuffer( GL_ARRAY_BUFFER, p->uvbo2 );
@@ -6767,7 +7576,7 @@ void RenderWorld( void )
 		}
 		BrouillardFixeNoir((( p->blend & 0x1F ) >= 1 ) && (( p->blend & 0x1F ) <= 4 ));
 		// Les indices du format Xbox decrivent des bandes de triangles.
-		zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky );
+		zbias_poser( p->zbias ); cull_poser( p->no_bfc || p->is_sky || ( p->alpha_cutoff > 0 ));
 		glDrawElements( GL_TRIANGLE_STRIP, p->num_indices,
 		                GL_UNSIGNED_SHORT, NULL );
 		if( uvw_fixe )
@@ -6841,7 +7650,7 @@ void RenderWorld( void )
 			{
 				int nv = 0, nr = 0, ns = 0, npv = 0;
 				ShaderMateriauStats( &nv, &nr, &ns, &npv );
-				const int npv_evit = ShaderMateriauPosesEvitees();		// � vpr �, #69
+				const int npv_evit = ShaderMateriauPosesEvitees();		// Â« vpr Â», #69
 				VLOG( "SHD", "variantes : %d en table, %.1f recherches/image, %.1f sondes/recherche "
 				             "(vhs %d) | programme de sommets repose %.1f fois/image, "
 				             "reposes evitees %.1f (vpr %d) | "
@@ -6860,7 +7669,7 @@ void RenderWorld( void )
 				s_bbl_appels = 0;
 			}
 			// Translucides restes sur vitaGL (passes translucide + triee),
-			// par raison -- voir raison_vitagl. Base de � gxt �.
+			// par raison -- voir raison_vitagl. Base de Â« gxt Â».
 			VLOG( "SHD", "translucides sur vitaGL par image : 1 couche %.1f (refus GXM %.1f ; "
 			             "z-bias %.1f, vcw %.1f, en lot %.1f, test alpha %.1f, alpha fixe %.1f, "
 			             "iva %.1f) | 2 couches hors GXM %.1f, refus GXM %.1f | sans texture %.1f "
@@ -6905,7 +7714,7 @@ void RenderWorld( void )
 		glMatrixMode( GL_MODELVIEW );
 		glPopMatrix();
 		glDepthRangef( 0.0f, 1.0f );
-		glDepthFunc( profondeur_decor());	// � zeq �
+		glDepthFunc( profondeur_decor());	// Â« zeq Â»
 		glDepthMask( GL_TRUE );
 	}
 

@@ -1320,7 +1320,7 @@ void PreMgr::LoadPre(const char *pFilename, bool async, bool dont_assert, bool u
 	}	
 	loadPre(pFilename, async, dont_assert, useBottomUpHeap);
 	Mem::Manager::sHandle().PopContext();	
-#ifdef __PLAT_VITA__
+#if defined(__PLAT_VITA__) && !defined(__PLAT_LINUX__)
 	// #68 : archive des pietons du niveau chargee DES l'archive du niveau,
 	// comme le chemin NGC de load_level (Levels.q : "IF IsNGC ... LoadPreFile
 	// pedpre", avant LoadLevelPreFile). Le chemin XBox ne la charge qu'apres
@@ -1395,7 +1395,7 @@ void PreMgr::UnloadPre(const char *pFilename, bool dont_assert)
 	// n'a pas change, plutot que refuser de le liberer.
 #endif
 
-#ifdef __PLAT_VITA__
+#if defined(__PLAT_VITA__) && !defined(__PLAT_LINUX__)
 	// Deja en sursis ? La demande est alors reellement honoree (elle vient de
 	// FlushDeferred, qui a d'abord retire le nom de la liste).
 	if( !s_flushing && pFilename && !pre_is_deferred( pFilename )

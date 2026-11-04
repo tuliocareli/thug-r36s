@@ -11,9 +11,18 @@ namespace Nx
 
 
 CFontManager::FontEntry 				CFontManager::s_font_tab[vMAX_FONT_ENTRIES];
-Lst::HashTable<CFontManager::FontEntry>	CFontManager::s_font_lookup(4);
+Lst::HashTable<CFontManager::FontEntry>*	CFontManager::s_p_font_lookup = NULL;
 char									CFontManager::s_meta_button_map[NUM_META_BUTTON_ENTRIES];
 bool									CFontManager::s_meta_button_map_initialized = false;
+
+Lst::HashTable<CFontManager::FontEntry>& CFontManager::GetFontLookup()
+{
+	if (!s_p_font_lookup)
+	{
+		s_p_font_lookup = new Lst::HashTable<FontEntry>(4);
+	}
+	return *s_p_font_lookup;
+}
 
 
 void CFontManager::sLoadFont(const char *pName, int charSpacing, int spaceSpacing, Image::RGBA *pColorTab, bool isButtonFont)
@@ -40,7 +49,7 @@ void CFontManager::sLoadFont(const char *pName, int charSpacing, int spaceSpacin
 			s_font_tab[i].mp_font->MarkAsButtonFont(isButtonFont);
 						
 			strcpy(s_font_tab[i].mName, pName);
-			s_font_lookup.PutItem(Script::GenerateCRC(pName), &s_font_tab[i]);
+			GetFontLookup().PutItem(Script::GenerateCRC(pName), &s_font_tab[i]);
 			break;
 		}
 	}
@@ -83,7 +92,7 @@ void CFontManager::sUnloadFont(const char *pName)
 	{
 		if (strcmp(s_font_tab[i].mName, pName) == 0)
 		{
-			s_font_lookup.FlushItem(Script::GenerateCRC(pName));
+			GetFontLookup().FlushItem(Script::GenerateCRC(pName));
 			
 			s_plat_unload_font(s_font_tab[i].mp_font);
 			s_font_tab[i].mp_font = NULL;
@@ -97,7 +106,7 @@ void CFontManager::sUnloadFont(const char *pName)
 // returns pointer to font if loaded, NULL if not
 Nx::CFont *CFontManager::sGetFont(uint32 checksum)
 {
-	FontEntry *p_entry = s_font_lookup.GetItem(checksum);
+	FontEntry *p_entry = GetFontLookup().GetItem(checksum);
 	if (p_entry)
 		return p_entry->mp_font;
 	else
@@ -113,7 +122,7 @@ Nx::CFont *CFontManager::sGetFont(const char *pName)
 // returns pointer to name if loaded, NULL if not
 const char *CFontManager::sTestFontLoaded(uint32 checksum)
 {
-	FontEntry *p_entry = s_font_lookup.GetItem(checksum);
+	FontEntry *p_entry = GetFontLookup().GetItem(checksum);
 	if (p_entry)
 		return p_entry->mName;
 	else

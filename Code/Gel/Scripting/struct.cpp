@@ -1270,6 +1270,18 @@ void CStruct::AddComponent(uint32 nameChecksum, ESymbolType type, const char *p_
 	}
 }
 
+void CStruct::AddComponent(uint32 nameChecksum, ESymbolType type, CStruct *p_struct)
+{
+	if (type == ESYMBOLTYPE_STRUCTUREPOINTER)
+	{
+		AddStructurePointer(nameChecksum, p_struct);
+	}
+	else
+	{
+		AddStructure(nameChecksum, p_struct);
+	}
+}
+
 // Integer or any other 4 byte value.
 void CStruct::AddComponent(uint32 nameChecksum, ESymbolType type, int integer)
 {
@@ -1282,10 +1294,11 @@ void CStruct::AddComponent(uint32 nameChecksum, ESymbolType type, int integer)
 			AddFloat(nameChecksum,*(float*)&integer);
 			break;
 		case ESYMBOLTYPE_STRUCTUREPOINTER:
-			AddStructurePointer(nameChecksum,(CStruct*)integer);
+			// Fallback: If someone still passed a 32-bit int, don't sign extend it!
+			AddStructurePointer(nameChecksum,(CStruct*)(uintptr_t)(uint32)integer);
 			break;
 		case ESYMBOLTYPE_ARRAY:
-			AddArrayPointer(nameChecksum,(CArray*)integer);
+			AddArrayPointer(nameChecksum,(CArray*)(uintptr_t)(uint32)integer);
 			break;
 		case ESYMBOLTYPE_NAME:
 			AddChecksum(nameChecksum,(uint32)integer);
@@ -1331,7 +1344,7 @@ struct SWhatever
 		CArray *mpArray;
 		uint8 *mpScript;
 		uint32 mChecksum;
-		uint32 mUnion; 
+		uintptr_t mUnion; 
 	};
 };
 

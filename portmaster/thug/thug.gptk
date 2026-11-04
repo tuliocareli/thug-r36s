@@ -1,0 +1,43 @@
+# GPTOKEYB profile for Tony Hawk's Underground 1 (R36S / RK3326)
+back = esc
+start = enter
+
+# Face buttons correspondendo 1:1 ao PS2 no R36S:
+# B (inferior) = Cruz / Ollie (space)
+# A (direita)  = Bolinha / Grab (c)
+# Y (esquerda) = Quadrado / Flip (x)
+# X (superior) = Triangulo / Grind (z)
+b = space
+a = c
+y = x
+x = z
+
+# Shoulders and Triggers
+l1 = q
+r1 = e
+l2 = q
+r2 = e
+
+# D-Pad
+up = up
+down = down
+left = left
+right = right
+
+# Left Analog Stick
+left_analog_up = up
+left_analog_down = down
+left_analog_left = left
+left_analog_right = right
+
+# Right Analog Stick (Camera)
+right_analog_up = mouse_up
+right_analog_down = mouse_down
+right_analog_left = mouse_left
+right_analog_right = mouse_right
+
+deadzone_mode = axial
+deadzone = 3000
+
+# Desativado hotkey=select para evitar que combinacoes com Select/Start matem o jogo (SIGKILL 137) ao pausar
+# hotkey = select

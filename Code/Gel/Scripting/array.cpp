@@ -109,9 +109,10 @@ void CArray::Clear()
 				{
 					// The array is of pointers, so make sure that the user of CArray has deleted and zeroed these before deleting the array.
 					// The CArray cannot delete them itself because this would cause cyclic dependencies.
+					void **pp_ptrs = (void**)mp_array_data;
 					for (uint32 i=0; i<m_size; ++i)
 					{
-						Dbg_MsgAssert(mp_array_data[i]==0,("Tried to delete a CArray that still contains non-NULL data: size=%d type='%s'",m_size,GetTypeName(m_type)));
+						Dbg_MsgAssert(pp_ptrs[i]==NULL,("Tried to delete a CArray that still contains non-NULL data: size=%d type='%s'",m_size,GetTypeName(m_type)));
 					}
 					break;
 				}	
@@ -129,6 +130,28 @@ void CArray::Clear()
 		
 	m_type=ESYMBOLTYPE_NONE;
 	m_size=0;
+}
+
+static inline size_t GetArrayElementSize(ESymbolType type)
+{
+	switch (type)
+	{
+		case ESYMBOLTYPE_INTEGER:
+			return sizeof(int);
+		case ESYMBOLTYPE_FLOAT:
+			return sizeof(float);
+		case ESYMBOLTYPE_NAME:
+			return sizeof(uint32);
+		case ESYMBOLTYPE_STRING:
+		case ESYMBOLTYPE_LOCALSTRING:
+		case ESYMBOLTYPE_PAIR:
+		case ESYMBOLTYPE_VECTOR:
+		case ESYMBOLTYPE_STRUCTURE:
+		case ESYMBOLTYPE_ARRAY:
+			return sizeof(void*);
+		default:
+			return sizeof(void*);
+	}
 }
 
 // Calls Clear, sets the size and type, allocates the buffer if necessary and initialises it to all zeroes.
@@ -172,14 +195,11 @@ void CArray::SetSizeAndType(int size, ESymbolType type)
 			Dbg_MsgAssert(mp_array_data==NULL,("mp_array_data not NULL ?"));
 			
 			Mem::Manager::sHandle().PushContext(Mem::Manager::sHandle().ScriptHeap());
-			mp_array_data=(uint32*)Mem::Malloc(m_size*sizeof(uint32));
+			size_t total_bytes = m_size * GetArrayElementSize(type);
+			mp_array_data=(uint32*)Mem::Malloc(total_bytes);
 			Mem::Manager::sHandle().PopContext();
 			
-			uint32 *p_long_word=mp_array_data;
-			for (uint32 i=0; i<m_size; ++i)
-			{
-				*p_long_word++=0;
-			}	
+			memset(mp_array_data, 0, total_bytes);
 		}	
 	}
 	else
@@ -204,28 +224,23 @@ void CArray::Resize(uint32 newSize)
 	Dbg_MsgAssert(newSize>1,("Resizing arrays to size 1 not supported yet ..."));
 	// TODO: Support the above if need be. Need to not allocate a new buffer in that case.
 	
+	size_t elem_size = GetArrayElementSize(m_type);
+	size_t old_bytes = m_size * elem_size;
+	size_t new_bytes = newSize * elem_size;
+
 	// Allocate the new buffer.
 	Mem::Manager::sHandle().PushContext(Mem::Manager::sHandle().ScriptHeap());
-	uint32 *p_new_buffer=(uint32*)Mem::Malloc(newSize*sizeof(uint32));
+	uint8 *p_new_buffer=(uint8*)Mem::Malloc(new_bytes);
 	Mem::Manager::sHandle().PopContext();
 	
 	// Copy the contents of the old buffer into the new.
-	uint32 *p_source=GetArrayPointer();
+	uint8 *p_source=(uint8*)GetArrayPointer();
 	// Note: Does not support resizing zero size arrays because it does not know what the type of the 
 	// new array should be.
 	Dbg_MsgAssert(p_source,("NULL array pointer ?"));
-	uint32 *p_dest=p_new_buffer;
-	uint32 i;
-	for (i=0; i<m_size; ++i)
-	{
-		*p_dest++=*p_source++;
-	}
+	memcpy(p_new_buffer, p_source, old_bytes);
 	// Zero the remainder of the new buffer.
-	uint32 remainder=newSize-m_size;
-	for (i=0; i<remainder; ++i)
-	{
-		*p_dest++=0;
-	}
+	memset(p_new_buffer + old_bytes, 0, new_bytes - old_bytes);
 	
 	// Only free mp_array_data if the old size was bigger than 1. 
 	// mp_array_data is not allocated for sizes of 1 as a memory optimization.
@@ -233,7 +248,7 @@ void CArray::Resize(uint32 newSize)
 	{
 		Mem::Free(mp_array_data);
 	}	
-	mp_array_data=p_new_buffer;
+	mp_array_data=(uint32*)p_new_buffer;
 	
 	m_size=newSize;
 	Dbg_MsgAssert(m_size>1,("Expected array size to be > 1 ??")); // Just to be sure

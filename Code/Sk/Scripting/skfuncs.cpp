@@ -214,6 +214,13 @@ bool ScriptCurrentSkaterIsPro(Script::CStruct *pParams, Script::CScript *pScript
 	Obj::CSkaterProfile *pSkaterProfile = Mdl::Skate::Instance()->GetCurrentProfile(pParams);
 	return ( pSkaterProfile && pSkaterProfile->IsPro() );
 }
+
+// @script | SkaterIsCustom | Checks if the current skater is a custom skater
+bool ScriptSkaterIsCustom(Script::CStruct *pParams, Script::CScript *pScript)
+{
+	Obj::CSkaterProfile *pSkaterProfile = Mdl::Skate::Instance()->GetCurrentProfile(pParams);
+	return ( pSkaterProfile && !pSkaterProfile->IsPro() );
+}
 	
 /******************************************************************/
 /*                                                                */

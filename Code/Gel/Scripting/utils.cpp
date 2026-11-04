@@ -1377,7 +1377,7 @@ union UValue
 	CArray *mpArray;
 	uint8 *mpScript;
 	uint32 mChecksum;
-	uint32 mUnion;
+	uintptr_t mUnion;
 };
 
 // This will load type and value from the passed component, resolving it if it refers to a global.

@@ -117,6 +117,8 @@ static void pousse_audio( VitaBink *b, const AVFrame *f )
 
 static AVCodecContext *ouvre_codec( AVStream *s )
 {
+	if( !s || !s->codecpar )
+		return NULL;
 	const AVCodec *c = avcodec_find_decoder( s->codecpar->codec_id );
 	if( !c )
 		return NULL;
@@ -163,30 +165,37 @@ VitaBink *vita_bink_open( const char *path, VitaBinkInfo *info,
 
 	for( unsigned i = 0; i < b->fc->nb_streams; ++i )
 	{
+		if( !b->fc->streams[i] || !b->fc->streams[i]->codecpar )
+			continue;
 		enum AVMediaType t = b->fc->streams[i]->codecpar->codec_type;
 		if( t == AVMEDIA_TYPE_VIDEO && b->vs < 0 ) b->vs = (int)i;
 		if( t == AVMEDIA_TYPE_AUDIO && b->as < 0 ) b->as = (int)i;
 	}
-	if( b->vs < 0 || !( b->vc = ouvre_codec( b->fc->streams[b->vs] )))
-		goto echec;
+	if( b->vs >= 0 )
+		b->vc = ouvre_codec( b->fc->streams[b->vs] );
 	if( b->as >= 0 )
-		b->ac = ouvre_codec( b->fc->streams[b->as] );	/* son absent : on joue muet */
+		b->ac = ouvre_codec( b->fc->streams[b->as] );
+	if( !b->vc && !b->ac )
+		goto echec;
 
 	b->pkt = av_packet_alloc();
-	b->vfr = av_frame_alloc();
-	b->afr = av_frame_alloc();
-	if( !b->pkt || !b->vfr || !b->afr )
+	if( b->vc ) b->vfr = av_frame_alloc();
+	if( b->ac ) b->afr = av_frame_alloc();
+	if( !b->pkt || ( b->vc && !b->vfr ) || ( b->ac && !b->afr ))
 		goto echec;
 
 	if( info )
 	{
-		AVStream *s = b->fc->streams[b->vs];
 		memset( info, 0, sizeof( *info ));
-		info->width   = b->vc->width;
-		info->height  = b->vc->height;
-		info->fps_num = s->avg_frame_rate.num ? s->avg_frame_rate.num : s->r_frame_rate.num;
-		info->fps_den = s->avg_frame_rate.den ? s->avg_frame_rate.den : s->r_frame_rate.den;
-		info->frames  = (int)s->duration;	/* le demuxeur bink y range le nombre d'images */
+		if( b->vs >= 0 && b->vc )
+		{
+			AVStream *s = b->fc->streams[b->vs];
+			info->width   = b->vc->width;
+			info->height  = b->vc->height;
+			info->fps_num = s->avg_frame_rate.num ? s->avg_frame_rate.num : s->r_frame_rate.num;
+			info->fps_den = s->avg_frame_rate.den ? s->avg_frame_rate.den : s->r_frame_rate.den;
+			info->frames  = (int)s->duration;	/* le demuxeur bink y range le nombre d'images */
+		}
 		if( b->ac )
 		{
 			info->sample_rate = b->ac->sample_rate;
@@ -220,7 +229,7 @@ int vita_bink_next_frame( VitaBink *b, VitaBinkFrame *out )
 		if( r < 0 )
 			return r == AVERROR_EOF ? 0 : r;
 
-		if( b->pkt->stream_index == b->vs )
+		if( b->pkt->stream_index == b->vs && b->vc )
 		{
 			avcodec_send_packet( b->vc, b->pkt );
 		}
@@ -229,6 +238,31 @@ int vita_bink_next_frame( VitaBink *b, VitaBinkFrame *out )
 			if( avcodec_send_packet( b->ac, b->pkt ) == 0 )
 				while( avcodec_receive_frame( b->ac, b->afr ) == 0 )
 					pousse_audio( b, b->afr );
+		}
+		av_packet_unref( b->pkt );
+	}
+}
+
+int vita_bink_read_audio( VitaBink *b )
+{
+	if( !b || b->as < 0 || !b->ac || !b->fc || !b->pkt || !b->afr )
+		return 0;
+
+	for( ;; )
+	{
+		int r = av_read_frame( b->fc, b->pkt );
+		if( r < 0 )
+			return ( r == AVERROR_EOF ) ? 0 : r;
+
+		if( b->cb && b->pkt->stream_index == b->as )
+		{
+			if( b->ac && avcodec_send_packet( b->ac, b->pkt ) == 0 )
+			{
+				while( b->ac && b->afr && avcodec_receive_frame( b->ac, b->afr ) == 0 )
+					pousse_audio( b, b->afr );
+			}
+			av_packet_unref( b->pkt );
+			return 1;
 		}
 		av_packet_unref( b->pkt );
 	}

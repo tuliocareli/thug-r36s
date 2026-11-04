@@ -84,8 +84,11 @@ void LoadAllStartupQBFiles()
 	Mem::Manager::sHandle().PopContext();
 
 	// Load the qdir.txt file
+	printf("[QDIR] Avant Pip::Load(QDIR_FILE)\n"); fflush(stdout);
 	const char *p_qdir=(const char *)Pip::Load(QDIR_FILE);
+	printf("[QDIR] Pip::Load(QDIR_FILE) -> %p\n", (void*)p_qdir); fflush(stdout);
 	uint32 file_size=Pip::GetFileSize(QDIR_FILE);
+	printf("[QDIR] Pip::GetFileSize -> %u\n", (unsigned)file_size); fflush(stdout);
 	
 	UsePermanentStringHeap();
 	
@@ -128,6 +131,9 @@ void LoadAllStartupQBFiles()
 			
 			// lwss add
 			strncpy(g_currentScriptFile, p_file_name, 255);
+
+			printf("[LOAD_QB] Loading: '%s'\n", p_file_name);
+			fflush(stdout);
 
 			SkateScript::LoadQB(p_file_name,
 						// We do want assertions if duplicate symbols when loading all 

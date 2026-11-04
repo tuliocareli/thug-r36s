@@ -57,6 +57,7 @@ namespace CFuncs
 *****************************************************************************/
 
 bool ScriptCurrentSkaterIsPro(Script::CStruct *pParams, Script::CScript *pScript);
+bool ScriptSkaterIsCustom(Script::CStruct *pParams, Script::CScript *pScript);
 bool ScriptGetGoalsCompleted(Script::CStruct *pParams, Script::CScript *pScript);
 bool ScriptGetNextLevelRequirements(Script::CStruct *pParams, Script::CScript *pScript);
 bool ScriptSetCurrentSkaterProfile(Script::CStruct *pParams, Script::CScript *pScript);

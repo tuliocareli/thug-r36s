@@ -22,6 +22,7 @@ static Obj::CMovieDetails *sp_vita_last_movie = 0;
 static unsigned long long  s_vita_movie_debut = 0;
 #endif
 #include <sk/objects/moviecam.h>
+#include <gel/music/music.h>
 
 #include <gel/assman/assman.h>
 #include <gel/scripting/script.h>
@@ -631,6 +632,7 @@ bool CMovieManager::Update()
 	// devient conditionnel : si une cinematique ne se termine JAMAIS, le
 	// script d'entree de niveau attend derriere un rideau noir plein ecran.
 	// Passe un delai large, on emprunte sa sortie normale.
+	if( pDetails->GetName() == CRCD( 0xf5012f52, "cutscene" ) )
 	{
 		const unsigned long long now = sceKernelGetProcessTimeWide();
 		g_vita_cine_vue = now;	// raccourcis de test bloques pendant une cinematique (#51)
@@ -647,58 +649,12 @@ bool CMovieManager::Update()
 			}
 		}
 
-		// [CORRIGE] Le critere Â« ca dure trop longtemps Â» etait faux : la
-		// cinematique du menu principal tourne EN BOUCLE et ne se termine
-		// jamais -- c'est sa raison d'etre. Mesure : trois demarrages, aucun
-		// Â« TERMINEE Â», puis ce garde-fou la tuait pile 30 s apres, d'ou le
-		// retour a la camera de skate.
-		//
-		// Le seul cas vraiment pathologique est celui d'origine : une
-		// cinematique qui ne DEMARRE jamais, parce que son asset n'arrive
-		// pas. On teste donc HasMovieStarted(), pas la duree. Une cinematique
-		// demarree a le droit de jouer aussi longtemps qu'elle veut.
-		// DEUX situations opposees, qu'il a fallu payer pour distinguer :
-		//
-		//  - Au MENU PRINCIPAL, la cinematique tourne en boucle et ne se
-		//    termine jamais : c'est sa raison d'etre. Un garde-fou de duree la
-		//    tuait pile 30 s apres son debut, et la vue retombait sur la
-		//    camera de skate.
-		//
-		//  - En JEU (story mode), la cinematique d'introduction doit, elle,
-		//    s'achever. Sans lecteur video elle ne le fait jamais, et le
-		//    joueur reste devant un ecran noir, camera figee.
-		//
-		// On ne borne donc la duree qu'en jeu.
-		//
-		// [REFUTE] « le mode de jeu les separe, IsFrontEnd() est vrai au
-		// menu » : mesure sur console, le mode au menu est « career »,
-		// is_frontend 0. C'est le comportement d'origine -- startup.q lance le
-		// menu par « autolaunch level=load_skateshop game=career ». Le
-		// garde-fou tuait donc la cinematique du menu 90 s apres son debut ;
-		// la camera retombait sur SkaterCam0 et le decor 3D du menu
-		// (mainmenu_bg) sortait du cadre : grand aplat violet, skater coupe.
-		//
-		// Le critere est le NIVEAU, teste comme le fait le source d'origine
-		// quelques lignes plus haut (ligne ~135) et dans GameHandler.cpp.
-		const bool au_menu =
-			( Mdl::Skate::Instance()->m_cur_level == CRCD( 0x9f2bafb7, "Load_Skateshop" ))
-			|| ( Mdl::Skate::Instance()->GetGameMode()
-			     && Mdl::Skate::Instance()->GetGameMode()->IsFrontEnd());
-
 		const bool jamais_demarree =
 			!pDetails->HasMovieStarted()
 			&& (( now - s_vita_movie_debut ) > 15000000ULL );
 
-		// 90 s : simple filet. La cause reelle du blocage est corrigee -- le
-		// compteur de vblank, dont derive l'horloge des cinematiques, n'etait
-		// alimente par personne sur Vita (voir Sys/Vita/p_timer.cpp,
-		// GetVblanks). Une cinematique progresse donc maintenant et se termine
-		// d'elle-meme ; ce garde-fou ne doit plus servir qu'en cas d'imprevu,
-		// d'ou un seuil largement au-dessus de la plus longue scene du jeu.
-		// [CORRIGE] #64 : 90 s coupait la sequence de fin du Story Mode, plus
-		// longue que ca. Seuil porte a 10 min.
 		const bool trop_longue =
-			!au_menu && (( now - s_vita_movie_debut ) > 600000000ULL );
+			(( now - s_vita_movie_debut ) > 600000000ULL );
 
 		if( jamais_demarree || trop_longue )
 		{
@@ -710,6 +666,8 @@ bool CMovieManager::Update()
 				      p_mode ? (int)p_mode->IsFrontEnd() : -1 );
 			}
 			sp_vita_last_movie = NULL;
+			Pcm::StopMusic();
+			Pcm::StopStreams();
 			AbortCurrentMovie( false );
 			return ( get_movie_count() != 0 );
 		}

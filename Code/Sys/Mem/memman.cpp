@@ -170,10 +170,10 @@ Manager::Manager( void )
 
 	_mem_end		= _mem_start + ( 33 * 1024 * 1024 );
 	_std_mem_end	= _mem_end;
-#	elif defined ( __PLAT_WN32__ )
-	// Nasty hack for WN32 for now - just grab ~38mb~50mb of main memory via a malloc.
-	_mem_start	= (char *)malloc( 50 * 1024 * 1024 );
-	_mem_end	= _mem_start + ( 50 * 1024 * 1024 );
+#	elif defined ( __PLAT_WN32__ ) || defined ( __PLAT_LINUX__ )
+	// Allocate 128MB of main memory for 64-bit architecture (leaves extra RAM for GL4ES/Mali CMA on R36S)
+	_mem_start	= (char *)malloc( 96 * 1024 * 1024 );
+	_mem_end	= _mem_start + ( 96 * 1024 * 1024 );
 
 	_std_mem_end = _mem_end;
 
@@ -260,10 +260,19 @@ void*	Manager::New( size_t size, bool assert_on_fail, Allocator* pAlloc )
 
 	if ( !pAlloc ) 					// set to 'default' allocator
 	{
+		if ( !mp_context || !mp_context->mp_alloc )
+		{
+			return malloc( size );
+		}
 		pAlloc = mp_context->mp_alloc;
 	}
 
 	void* p_ret = pAlloc->allocate( size, assert_on_fail );
+	if (!p_ret)
+	{
+		printf("[MEM ERROR] Allocation of %u bytes failed in allocator '%s'!\n", (unsigned)size, pAlloc->mp_name);
+		fflush(stdout);
+	}
 	
 	if ( p_ret )	// if allocation was successful
 	{

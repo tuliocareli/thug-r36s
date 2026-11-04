@@ -1,0 +1,17 @@
+# THUG Vita - port settings, read when the game starts.
+# Also editable in game: OPTIONS > Control Setup > Vita Options.
+# 0 = off, 1 = on. Delete this file to restore the defaults.
+#
+# Invert a stick axis. Left stick = skater (and menus), right stick = camera.
+invert_left_x=0
+invert_left_y=0
+invert_right_x=0
+invert_right_y=0
+#
+# 0: PS Vita buttons, Xbox layout (L = L1+L2, R = R1+R2, SELECT = get off).
+# 1: DualShock layout for PS TV / external pads / trigger grips: L1, L2, R1,
+#    R2 apart, rear touchpad halves = L2/R2, L1+R1 = get off the board.
+dualshock_layout=0
+#
+# Display frame rate cap: 60, or 30 (steadier: every frame lasts 2 vsyncs).
+framerate=30

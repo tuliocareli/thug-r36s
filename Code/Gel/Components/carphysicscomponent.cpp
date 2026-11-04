@@ -57,7 +57,11 @@ CCarPhysicsComponent::CCarPhysicsComponent() : CBaseComponent()
 	m_wheelRotationY = 0.0f;
 	m_targetWheelRotationY = 0.0f;
 
+#if defined(__PLAT_LINUX__)
+	m_shadowEnabled = false; // Desativa sombras projetadas de carros para economizar CPU raycasts
+#else
 	m_shadowEnabled = true;
+#endif
 }
 
 /******************************************************************/

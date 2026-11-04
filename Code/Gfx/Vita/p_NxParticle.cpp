@@ -71,7 +71,11 @@
 namespace NxVita
 {
 // "prs 0/1" : 0 par defaut tant que le rendu n'est pas valide a l'ecran.
-int g_vita_prs = 1;	// valide a l'ecran par l'humain le 2026-10-03 (etincelles des grinds, NJ)
+#if defined(__PLAT_LINUX__)
+int g_vita_prs = 0;	// Desativado no R36S para evitar calculo CPU em grinds
+#else
+int g_vita_prs = 1;	// valide a l'ecran par l'humain le 2026-10-03
+#endif
 }
 
 namespace Nx
@@ -239,8 +243,8 @@ CVitaParticle::CVitaParticle( uint32 checksum, uint32 type_checksum, int max_par
 			m_type = VPRS_FLAT;				m_num_lists = 1;			m_num_colors = 1;			break;
 		case 0x15834eea:	// Glow
 			m_type = VPRS_GLOW;				m_num_lists = 1;			m_num_colors = 3;			break;
-		case 0x7ec7252d:	// GlowRibbonTrail
-			m_type = VPRS_GLOWRIBBONTRAIL;	m_num_lists = history + 1;	m_num_colors = history + 4;
+		case 0x7ec7252d:	// GlowRibbonTrail (etincelles des grinds - desativado para performance no R36S)
+			m_type = VPRS_AUTRE;			m_num_lists = history + 1;	m_num_colors = history + 4;
 			m_alpha_demi = true;
 			break;
 		case 0x2eeb4b09:	// Line
@@ -420,7 +424,7 @@ void CVitaParticle::dessiner( void )
 	{
 		case VPRS_FLAT:				dessiner_flat();				break;
 		case VPRS_GLOW:				dessiner_glow();				break;
-		case VPRS_GLOWRIBBONTRAIL:	dessiner_glow_ribbon_trail();	break;
+		case VPRS_GLOWRIBBONTRAIL:	/* desativado no R36S */		break;
 	}
 	vider();	// l'etat (texture, melange) change au systeme suivant
 }

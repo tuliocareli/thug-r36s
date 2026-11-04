@@ -106,6 +106,9 @@ private:
 	// celui des dictionnaires (voir p_NxTexture.cpp).
 	virtual CTexture *plat_load_texture( const char *p_texture_name,
 	                                     bool sprite, bool alloc_vram );
+	virtual bool      plat_unload_texture( CTexture *p_texture );
+	virtual void      plat_add_texture( CTexture *p_texture );
+	virtual bool      plat_remove_texture( CTexture *p_texture );
 };
 
 

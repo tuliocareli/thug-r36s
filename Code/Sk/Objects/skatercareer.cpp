@@ -715,7 +715,7 @@ void CSkaterCareer::WriteIntoStructure(Script::CScriptStructure *pIn)
 
 	// Thrust the new structure into the passed structure.
 	Dbg_MsgAssert(pIn,("NULL pIn"));
-	pIn->AddComponent(Script::GenerateCRC("Career"),ESYMBOLTYPE_STRUCTUREPOINTER,(int)pTemp);
+	pIn->AddComponent(Script::GenerateCRC("Career"),ESYMBOLTYPE_STRUCTUREPOINTER,pTemp);
 	
 	// Note: The above arrays and structure are not deleted here, because pointers to them have
 	// been given to the passed structure, so it will delete them when it gets deleted.

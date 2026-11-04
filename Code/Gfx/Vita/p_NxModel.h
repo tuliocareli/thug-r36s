@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// p_NxModel.h — modeles (skater, objets de niveau)
+// p_NxModel.h â€” modeles (skater, objets de niveau)
 //
 // Decouverte qui structure tout ce fichier : dans ce moteur, un MAILLAGE EST
 // UNE SCENE. s_plat_load_mesh du backend DX9 (p_nx.cpp:999) se contente
@@ -38,7 +38,7 @@ namespace Nx
 
 class CVitaModelLights;
 
-// Eclairage par sommet : actif par defaut, coupable a la commande � lum 0 �.
+// Eclairage par sommet : actif par defaut, coupable a la commande « lum 0 ».
 extern bool g_vita_lighting;
 
 // Un morceau de geometrie deja televerse sur le GPU.
@@ -179,6 +179,7 @@ struct SGpuMesh
 	// Adressage de la passe 1 (0 repetition, sinon bloque au bord) : les UV
 	// des logos debordent largement de [0,1] (t-shirt : -1,8..1,3).
 	unsigned char	decal_au, decal_av;
+	unsigned int	tex_checksum;	// Checksum original da textura da peca/decalque
 
 	// GYROPHARES DES VEHICULES (issue #77). La rampe de veh_policecar_* est
 	// faite de maillages a UV WIBBLE : une tache claire au centre de la
@@ -224,8 +225,8 @@ struct SGpuMesh
 };
 
 // Une entree CAS designe UN triangle a retirer quand le masque correspond.
-// Format releve sur DX9/p_NxMesh.cpp:69-97 -- fichier � xxx.cas.xbx � associe
-// a chaque � xxx.skin.xbx �.
+// Format releve sur DX9/p_NxMesh.cpp:69-97 -- fichier ï¿½ xxx.cas.xbx ï¿½ associe
+// a chaque ï¿½ xxx.skin.xbx ï¿½.
 struct SCasEntry
 {
 	unsigned int mask;
@@ -262,13 +263,14 @@ public:
 	// Pieces GPU, en lecture : la carte d'ombre les redessine (p_ombre.cpp).
 	const SGpuMesh *	Pieces() const	{ return mp_pieces; }
 	const char *Name() const		{ return m_vita_name; }
-	// Dossier parent du fichier source (� ped_male �...) : la sonde � pdt �
+	// Dossier parent du fichier source (« ped_male »...) : la sonde « pdt »
 	// (issue #46) en a besoin, le nom court l'a perdu.
 	const char *Dossier() const	{ return m_vita_dossier; }
 
 	// Retire les triangles dont le masque CAS correspond, et remet les autres.
 	// Repart toujours des indices d'origine : appeler avec 0 restaure tout.
 	void		HidePolys( unsigned int mask );
+	void		RefreshTextures();
 
 	// Boite englobante de tous les morceaux, en espace modele. Calculee une
 	// fois au chargement : CElement3d::AutoComputeScale s'en sert pour
@@ -288,7 +290,7 @@ private:
 	int			m_vita_refs;
 	bool		m_vita_orphelin;
 
-	// Charge � xxx.cas.xbx � a cote de � xxx.skin.xbx �. Sans lui, aucun
+	// Charge ï¿½ xxx.cas.xbx ï¿½ a cote de ï¿½ xxx.skin.xbx ï¿½. Sans lui, aucun
 	// triangle n'est retirable et le corps traverse les vetements.
 	void		load_cas_table( const char *p_skin_filename );
 	// Variante RAM : memes champs (version, masque si v>=2, compte, entrees),
@@ -409,7 +411,7 @@ private:
 
 	// C'est ICI que le moteur dessine, pas dans CModel : CModel::Render
 	// (NxModel.cpp:329) delegue a CGeom::Render pour chaque geom, qui appelle
-	// cette virtuelle. Mon premier essai plaçait le rendu dans
+	// cette virtuelle. Mon premier essai plaÃ§ait le rendu dans
 	// CModel::plat_render -- jamais appele.
 	virtual bool plat_render( Mth::Matrix *pRootMatrix,
 	                          Mth::Matrix *ppBoneMatrices, int numBones );
@@ -483,7 +485,7 @@ private:
 	virtual Image::RGBA	plat_get_color() const	{ return m_vita_color; }
 
 	// Boite englobante. La version de base rend une boite VIDE et affiche un
-	// � STUB: PlatGetBoundingBox � (NxGeom.cpp:182) : avec elle,
+	// ï¿½ STUB: PlatGetBoundingBox ï¿½ (NxGeom.cpp:182) : avec elle,
 	// AutoComputeScale dimensionne et centre les elements 3D de l'interface a
 	// partir de rien -- panneau du menu mal echelle, skater mal place.
 	virtual const Mth::CBBox &	plat_get_bounding_box() const;
@@ -508,7 +510,7 @@ private:
 	virtual void				plat_rotate_y( Mth::ERot90 rot );
 
 	// Lumieres du modele. La version de base JETTE le pointeur (NxGeom.cpp:307
-	// affiche « STUB: PlatSetModelLights ») : on perdait donc la luminosite du
+	// affiche Â« STUB: PlatSetModelLights Â») : on perdait donc la luminosite du
 	// modele, celle que les cinematiques mettent a zero pour assombrir le
 	// skater (cutscenedetails.cpp:4732).
 	virtual void	plat_set_model_lights( CModelLights *p_lights )
@@ -579,6 +581,8 @@ class CVitaModel : public CModel
 public:
 	CVitaModel() {}
 	virtual ~CVitaModel() {}
+
+	virtual bool plat_refresh_materials( void );
 };
 
 } // namespace Nx

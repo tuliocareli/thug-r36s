@@ -2962,6 +2962,16 @@ void Device::read_data( void )
 	if( pad.buttons & SCE_CTRL_UP )		m_data.m_control_data[10] = 0xFF;
 	if( pad.buttons & SCE_CTRL_DOWN )	m_data.m_control_data[11] = 0xFF;
 
+	// Pressions analogiques requises par THUG pour les tricks et le Ollie (saut)
+	if( pad.buttons & SCE_CTRL_TRIANGLE )	m_data.m_control_data[12] = 0xFF;
+	if( pad.buttons & SCE_CTRL_CIRCLE )		m_data.m_control_data[13] = 0xFF;
+	if( pad.buttons & SCE_CTRL_CROSS )		m_data.m_control_data[14] = 0xFF;
+	if( pad.buttons & SCE_CTRL_SQUARE )		m_data.m_control_data[15] = 0xFF;
+	if( pad.buttons & SCE_CTRL_L1 )			m_data.m_control_data[16] = 0xFF;
+	if( pad.buttons & SCE_CTRL_R1 )			m_data.m_control_data[17] = 0xFF;
+	if( pad.buttons & SCE_CTRL_L2 )			m_data.m_control_data[18] = 0xFF;
+	if( pad.buttons & SCE_CTRL_R2 )			m_data.m_control_data[19] = 0xFF;
+
 	uint32 pressed = 0xFFFF ^ (( m_data.m_control_data[2] << 8 )
 	                          | m_data.m_control_data[3] );
 	m_pressed = ( pressed != 0 ) || blanc || noir;

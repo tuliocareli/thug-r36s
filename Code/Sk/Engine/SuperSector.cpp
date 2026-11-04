@@ -480,8 +480,8 @@ void	Manager::UpdateCollisionSuperSectors(Lst::Head<Nx::CCollStatic> &add_list,
 				uint32 count = p_super_sector->m_NumCollSectors;
 				if (count)
 				{
-					p_super_sector->m_CollSectorList = (Nx::CCollStatic**)Mem::Malloc(4*(count));
-					memcpy(p_super_sector->m_CollSectorList, pp_old, 4*(count));
+					p_super_sector->m_CollSectorList = (Nx::CCollStatic**)Mem::Malloc(sizeof(Nx::CCollStatic*)*(count));
+					memcpy(p_super_sector->m_CollSectorList, pp_old, sizeof(Nx::CCollStatic*)*(count));
 					Mem::Free(pp_old);
 				}
 				else

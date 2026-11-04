@@ -69,7 +69,6 @@ void			CWindow2D::SetSize(int width, int height)
 
 void			CWindow2D::plat_update_engine()
 {
-	printf ("STUB: PlatUpdateEngine\n");
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -62,7 +62,7 @@ class CArray : public Mem::CPoolable<CArray>
 		CStruct *mp_structure;
 		CArray *mp_array;
 		// Used to zero the single element.
-		uint32 m_union;
+		uintptr_t m_union;
 	};
 
 	// The type of the things in the array.

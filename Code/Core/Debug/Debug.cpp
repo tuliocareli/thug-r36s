@@ -414,6 +414,10 @@ int OurPrintf ( const char* fmt, ... )
 	#endif
 	
 	default:
+#if defined(__PLAT_LINUX__)
+		fputs(p_buffer, stdout);
+		fflush(stdout);
+#endif
 		break;
 	}
 	

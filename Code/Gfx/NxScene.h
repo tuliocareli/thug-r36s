@@ -31,6 +31,7 @@ class	CSector;
 class	CTexDict;
 class	CCollStaticTri;
 class	CCollObjTriData;
+class	CCollBSPNode;
 
 ////////////////////////////////////////////////////////////////////////
 // CScene:
@@ -117,6 +118,7 @@ protected:
 	// read scene collision file
 	bool						read_collision(const char *p_name, char *p_pip_name, int &num_coll_sectors,
 											   CCollStaticTri * &p_coll_sectors, CCollObjTriData * &p_coll_sector_data,
+											   CCollBSPNode * &p_bsp_nodes,
 											   Mth::CBBox &bbox, bool is_net=false);
 
 	void						remove_sector_from_table(uint32 sector_checksum);
@@ -138,6 +140,7 @@ protected:
 	int							m_num_coll_sectors;							// non-cloned collision
 	CCollStaticTri *			mp_coll_sectors;							// Static collision objects
 	CCollObjTriData *			mp_coll_sector_data;						// Static collision object data
+	CCollBSPNode *				mp_bsp_nodes;
 
 	// For the incremental update code
 	char						m_add_scene_filename[128];
@@ -146,6 +149,7 @@ protected:
 	int							m_num_add_coll_sectors;
 	CCollStaticTri *			mp_add_coll_sectors;
 	CCollObjTriData *			mp_add_coll_sector_data;
+	CCollBSPNode *				mp_add_bsp_nodes;
 
 	bool						m_using_add_sectors; // 0x274
 	Lst::Head < CSector > *		mp_orig_sectors; // 0x278

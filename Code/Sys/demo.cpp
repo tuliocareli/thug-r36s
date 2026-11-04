@@ -15,6 +15,7 @@
 
 #include <gel/music/music.h>
 #include <gel/soundfx/soundfx.h>
+#include <gel/scripting/script.h>
 
 #ifdef __PLAT_NGPS__
     #include <eekernel.h>
@@ -190,29 +191,18 @@ Note the following points before calling LoadExecPS2().
 
 bool ExitDemo()
 {
+#if defined(__PLAT_LINUX__) || defined(__PLAT_VITA__)
+    Script::RunScript("dialog_box_exit");
+    Script::RunScript("load_skateshop");
+    return true;
+#endif
 
-#ifdef	__PLAT_NGPS__													  
-
-	prepare_to_exit();													  
-
+#ifdef	__PLAT_NGPS__
+	prepare_to_exit();
 	while (1)
-	{		
-		sceSifExitCmd();			// Sony suggested fix to make LoadExecPS2 work more reliably. 
-	
-		if (Config::SonyBootstrap())
-		{
-			printf ("Exiting with sceDemoEnd\n");
-			sceDemoEnd(demo_exit_reason);
-		}
-		else
-		{
-			sceSifExitCmd();			// Sony suggested fix to make LoadExecPS2 work more reliably. 
-			char *args[] = {Config::gReturnString };
-			printf ("Exiting with LoadExecPS2( %s [%s] )\n", Config::gReturnTo, Config::gReturnString); 
-			LoadExecPS2(Config::gReturnTo, 1, args);
-		}
-		printf ("ERROR - Failed to exit!!!!!!! RETRYING\n");
-	}		
+	{
+		sceSifExitCmd();
+	}
 #endif
    
 	return true;		// actually will never get here

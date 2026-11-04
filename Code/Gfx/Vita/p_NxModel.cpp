@@ -1,5 +1,5 @@
 /*****************************************************************************
-**  THUG-Vita — backend graphique                                            **
+**  THUG-Vita â€” backend graphique                                            **
 **  Code/Gfx/Vita/p_NxModel.cpp                                             **
 **                                                                          **
 **  Modeles : le skater, les objets de niveau, les elements animes.         **
@@ -40,10 +40,10 @@ namespace NxVita { void EnregistrerInstance( Nx::CVitaGeom * ); void OublierInst
 namespace Nx
 {
 
-// Liste les noms des modeles dessines, une seule fois chacun. � tm 1 �.
+// Liste les noms des modeles dessines, une seule fois chacun. « tm 1 ».
 // Chaque armement repart d'une liste vide (voir plat_render).
 bool g_vita_trace_modeles = false;
-// Pose par la commande � tm 1 � : vide la liste au prochain dessin.
+// Pose par la commande « tm 1 » : vide la liste au prochain dessin.
 bool g_vita_trace_reset   = false;
 bool g_vita_trace_reset_inactifs = false;
 
@@ -74,7 +74,7 @@ struct SMorceauReporte
 	bool            a_rgba;
 };
 
-#define MAX_REPORTES 256
+#define MAX_REPORTES 512
 static SMorceauReporte s_reportes[MAX_REPORTES];
 static int             s_num_reportes = 0;
 
@@ -89,6 +89,12 @@ extern int g_vita_mbf;
 extern int g_vita_zw_peau;
 static void peau_cull( const SGpuMesh *p )
 {
+#if defined(__PLAT_LINUX__)
+	// No backface culling on Linux (matches XBox instance.cpp:481 D3DCULL_NONE)
+	// Prevents transparent vacuum hole behind CAS skater head & hair pieces
+	(void)p;
+	glDisable( GL_CULL_FACE );
+#else
 	if( g_vita_mbf && !p->no_bfc )
 	{
 		glEnable( GL_CULL_FACE );
@@ -96,9 +102,10 @@ static void peau_cull( const SGpuMesh *p )
 	}
 	else
 		glDisable( GL_CULL_FACE );
+#endif
 }
 
-#define MAX_PEAU_REPORTEES 48
+#define MAX_PEAU_REPORTEES 256
 #define PEAU_REPORT_OS     64
 struct SPeauReportee
 {
@@ -116,10 +123,14 @@ struct SPeauReportee
 static SPeauReportee s_peau_reportees[MAX_PEAU_REPORTEES];
 static int           s_num_peau_reportees = 0;
 
-// Coupe-circuit : � dm 0 � revient au dessin immediat, pour comparer.
+// Coupe-circuit : « dm 0 » revient au dessin immediat, pour comparer.
 bool g_vita_differer_modeles = true;
 // "mbf 0/1" : faces arriere des personnages eliminees selon le materiau (#46).
+#if defined(__PLAT_LINUX__)
+int g_vita_mbf = 0;
+#else
 int g_vita_mbf = 1;
+#endif
 // "pzw 0/1" : morceaux translucides des personnages ecrivent la profondeur,
 // avec alpha test 1/255 dans le shader, comme XBox (render.cpp:1518) (#46).
 int g_vita_zw_peau = 1;
@@ -164,16 +175,16 @@ static void uvw_modele_lever( void )
 
 
 
-// Interrupteur d'eclairage, reglable a chaud par la commande � lum 0 � / � lum 1 �
-// (voir p_siodev.cpp). Sert a repondre par la MESURE a � est-ce l'eclairage
-// qui coute ? � : on compare le meme compteur dans les deux etats, sur la
+// Interrupteur d'eclairage, reglable a chaud par la commande ï¿½ lum 0 ï¿½ / ï¿½ lum 1 ï¿½
+// (voir p_siodev.cpp). Sert a repondre par la MESURE a ï¿½ est-ce l'eclairage
+// qui coute ? ï¿½ : on compare le meme compteur dans les deux etats, sur la
 // meme scene, sans recompiler.
 // COUPE PAR DEFAUT, et ce n'est pas un abandon : l'integration de l'eclairage
 // materiel est incomplete, et une version a moitie juste est pire que pas
 // d'eclairage du tout. Trois defauts identifies, tous dans l'ETAT GL :
 //
 //  1. glLightfv( GL_POSITION ) est transforme par la MODELVIEW COURANTE. Or
-//     plat_render charge � vue x matrice du modele � avant de dessiner : chaque
+//     plat_render charge ï¿½ vue x matrice du modele ï¿½ avant de dessiner : chaque
 //     modele pose donc ses lumieres dans SON repere, et la direction bouge avec
 //     lui. C'est la cause des variations et du clignotement.
 //     -> il faut poser les lumieres quand la modelview ne contient QUE la vue.
@@ -187,10 +198,10 @@ static void uvw_modele_lever( void )
 //  3. Aucun glMaterialfv n'est pose : le materiau OpenGL par defaut (diffuse
 //     0,8, ambiante 0,2) s'ajoute a tout ce qu'on calcule.
 //
-// La commande � lum 1 � reste, pour reprendre le chantier et mesurer.
+// La commande ï¿½ lum 1 ï¿½ reste, pour reprendre le chantier et mesurer.
 // Actif depuis le 2026-10-03 : shader de peau eclaire valide contre xemu
 // (Manhattan, ombrage du skater comparable, 1,6 ms pour les modeles). #4.
-bool g_vita_lighting = true;
+bool g_vita_lighting = false;
 
 // Decomposition du temps de dessin. Mesurer un bloc opaque m'a fait accuser
 // deux fois le mauvais coupable ; on separe donc le calcul (skinning +
@@ -205,7 +216,7 @@ int       g_vita_n_draws = 0;
 // en transforme bien plus qu'on ne croit, soit la boucle est tres mal servie
 // par le CPU. Ce compteur tranche.
 int       g_vita_n_verts = 0;
-// � gsk 0/1 � : skinning des personnages par le GPU (issue #18).
+// « gsk 0/1 » : skinning des personnages par le GPU (issue #18).
 bool      g_vita_skin_gpu = true;
 // Matrice racine du geom en cours de rendu (plat_render -> DrawSkinned).
 static Mth::Matrix *sp_racine_courante = NULL;
@@ -223,7 +234,7 @@ static const CModel *sp_modele_courant = NULL;
 // aom[0..11] : lignes vers la carte, [12] part d'ombre, [13..14] biais.
 static bool auto_ombre( const float *mv, const float *proj, float aom[16], unsigned int *p_tex )
 {
-	if( !NxVita::g_vita_auto_ombre || !sp_modele_courant )
+	if( !NxVita::g_vita_auto_ombre || !sp_modele_courant || !NxVita::g_vita_ombre )
 		return false;
 	if(( proj[15] != 0.0f ) || ( fabsf( proj[0] ) < 1e-6f ))
 		return false;		// projection orthogonale : pas de camera a distance
@@ -255,7 +266,7 @@ static bool auto_ombre( const float *mv, const float *proj, float aom[16], unsig
 	return true;
 }
 
-// SONDE � pdt � (issue #46 : tete des pietons generiques decalee vers le
+// SONDE « pdt » (issue #46 : tete des pietons generiques decalee vers le
 // haut). Pendant UNE image, au plus PDT_MAX_LIGNES lignes [PDT] : nom,
 // chemin de dessin, racine, centre des sommets skinnes AU CPU avec la
 // formule exacte de la boucle CPU de DrawSkinned. Ne change pas le rendu.
@@ -281,7 +292,7 @@ CVitaMesh::CVitaMesh()
 {
 	// 0 serait une valeur legitime de masque : on part donc d'une valeur
 	// impossible, sinon le tout premier HidePolys(0) serait ignore comme
-	// � deja dans cet etat �.
+	// ï¿½ deja dans cet etat ï¿½.
 	m_CASRemovalMask = 0;
 	m_vita_name[0]   = 0;
 	m_vita_eclairable = false;
@@ -336,7 +347,9 @@ void VitaLibererMeshDifferes( void )
 	if( s_nb_mesh_differes || s_finish_en_attente )
 	{
 		s_finish_en_attente = false;
+#if !defined(__PLAT_LINUX__)
 		glFinish();
+#endif
 		for( int i = 0; i < s_nb_mesh_differes; ++i )
 			delete s_mesh_differes[i];
 		s_nb_mesh_differes = 0;
@@ -382,7 +395,9 @@ void CVitaMesh::Lacher()
 	{
 		if( differer_mesh( this ))
 			return;
-		glFinish();		// le GPU peut encore lire ses tampons (s_plat_finish_rendering)
+#if !defined(__PLAT_LINUX__)
+		glFinish();
+#endif
 		delete this;
 	}
 }
@@ -396,7 +411,9 @@ void CVitaMesh::Decharger()
 	}
 	if( differer_mesh( this ))
 		return;
+#if !defined(__PLAT_LINUX__)
 	glFinish();
+#endif
 	delete this;
 }
 
@@ -517,7 +534,7 @@ static bool passe_decal( const NxVita::SVitaMesh *p_src, int k, SPasseDecal *d )
 
 static bool passe_k_dessinable( const NxVita::SVitaMesh *p_src, int k, CTexDict *p_tex_dict )
 {
-	if( !p_tex_dict || !p_src->p_weights || !p_src->p_bones )
+	if( !p_tex_dict || !p_src || ( p_src->num_indices <= 0 ) || ( p_src->num_vertices <= 0 ))
 		return false;
 	if( p_src->num_passes < (unsigned int)( k + 1 ))
 		return false;
@@ -525,16 +542,13 @@ static bool passe_k_dessinable( const NxVita::SVitaMesh *p_src, int k, CTexDict 
 	passe_decal( p_src, k, &d );
 	if( !d.tex || !d.p_uv )
 		return false;
-	if( d.blend != 5 )
+	if( d.blend > 11 )
 		return false;
-	// Passe 2 : seulement par-dessus une passe 1 BLEND dessinee, le cas du
+	// Passe 2 : seulement par-dessus une passe 1 dessinee, le cas du
 	// CAS (tatouages, logos, calques) -- pas de saut de passe a interpreter.
 	if(( k == 2 ) && !passe_k_dessinable( p_src, 1, p_tex_dict ))
 		return false;
-	if( !p_src->p_indices || ( p_src->num_indices <= 0 ))
-		return false;
-	CTexture *p_tex = p_tex_dict->GetTexture( d.tex );
-	return p_tex && ((CVitaTexture *)p_tex )->GetGLTexture();
+	return true;
 }
 
 // Etat de dessin d'une passe 1 (#55), texture DEJA liee sur l'unite 0 :
@@ -763,6 +777,7 @@ void CVitaMesh::build_pieces( NxVita::SVitaSceneGeom *p_geom, CTexDict *p_tex_di
 		}
 
 		p_dst->texture = 0;
+		p_dst->tex_checksum = p_src->texture_checksum;
 		if( p_tex_dict && p_src->texture_checksum )
 		{
 			CTexture *p_tex = p_tex_dict->GetTexture( p_src->texture_checksum );
@@ -983,7 +998,7 @@ void CVitaMesh::build_pieces( NxVita::SVitaSceneGeom *p_geom, CTexDict *p_tex_di
 			*p_dst = *p_base;
 			p_dst->owns_verts   = 0;
 			p_dst->owns_skin    = 0;
-			p_dst->vbo          = 0;
+			p_dst->vbo          = p_base->vbo;	// Garde le VBO de base pour le mode Draw() fixe (menu/pause)
 			p_dst->cbo          = 0;
 			p_dst->cbo_lit      = 0;
 			p_dst->p_lit        = NULL;
@@ -1006,6 +1021,7 @@ void CVitaMesh::build_pieces( NxVita::SVitaSceneGeom *p_geom, CTexDict *p_tex_di
 			p_dst->decal        = 1;
 			p_dst->decal_au     = dk.au;
 			p_dst->decal_av     = dk.av;
+			p_dst->tex_checksum = dk.tex;
 			// #77 : ni UV wibble ni passe ADD heritees de la base (tampons
 			// propres a celle-ci, liberes par elle seule).
 			p_dst->uvw0         = 0;
@@ -1017,7 +1033,8 @@ void CVitaMesh::build_pieces( NxVita::SVitaSceneGeom *p_geom, CTexDict *p_tex_di
 			// [SOURCE] XBox/NX/mesh.cpp:603 : le verrou de couleur est PAR
 			// PASSE (logos du t-shirt : 0xa4, verrouilles).
 			p_dst->color_locked = ( dk.flags & 0x80 ) ? 1 : 0;
-			p_dst->texture      = ((CVitaTexture *)p_tex_dict->GetTexture( dk.tex ))->GetGLTexture();
+			CTexture *p_dt = p_tex_dict ? p_tex_dict->GetTexture( dk.tex ) : NULL;
+			p_dst->texture      = p_dt ? ((CVitaTexture *)p_dt )->GetGLTexture() : 0;
 
 			glGenBuffers( 1, &p_dst->uvbo );
 			glBindBuffer( GL_ARRAY_BUFFER, p_dst->uvbo );
@@ -1113,9 +1130,9 @@ void CVitaMesh::Build( const char *p_filename, CTexDict *p_tex_dict )
 	// C'est ce chainon qui manquait : sans lui GetHierarchy() rendait NULL,
 	// CalculateCarHierarchyMatrices sortait sans poser la moindre matrice
 	// d'os, et les six parties d'un vehicule se dessinaient empilees a
-	// l'origine du modele -- voiture � verticale � et sans roues.
+	// l'origine du modele -- voiture « verticale » et sans roues.
 	// Repartition des morceaux par os, une fois par modele hierarchique.
-	// � les roues de droite ne sont pas rendues, les gauches a moitie � : si
+	// « les roues de droite ne sont pas rendues, les gauches a moitie » : si
 	// plusieurs roues partagent le meme index d'os, elles se superposent.
 	if( geom.num_hierarchy > 0 )
 	{
@@ -1168,7 +1185,7 @@ void CVitaMesh::Build( const char *p_filename, CTexDict *p_tex_dict )
 		}
 		m_vita_name[k] = 0;
 
-		// Dossier parent (sonde � pdt �, issue #46).
+		// Dossier parent (sonde « pdt », issue #46).
 		const char *p_dir = p_filename;
 		for( const char *q = p_filename; ( q + 1 ) < p_base; ++q )
 			if(( *q == '/' ) || ( *q == '\\' ))
@@ -1269,7 +1286,7 @@ void CVitaMesh::load_cas_from_memory( const unsigned char *p_cas_data )
 // Charge la table CAS associee a un maillage skinne.
 //
 // Format releve sur la reference DX9 (p_NxMesh.cpp:69-97) : pour tout
-// � xxx.skin.xbx � il existe un � xxx.cas.xbx � contenant
+// ï¿½ xxx.skin.xbx ï¿½ il existe un ï¿½ xxx.cas.xbx ï¿½ contenant
 //
 //     uint32 version
 //     uint32 masque global        (seulement si version >= 2)
@@ -1306,7 +1323,7 @@ void CVitaMesh::load_cas_table( const char *p_skin_filename )
 	{
 		// LE masque de retrait de ce maillage -- a stocker, pas a jeter.
 		//
-		// C'est lui qui dit � ce vetement couvre telle zone du corps �.
+		// C'est lui qui dit ï¿½ ce vetement couvre telle zone du corps ï¿½.
 		// CModel::GetPolyRemovalMask agrege les masques de toutes les pieces
 		// portees (NxModel.cpp:695) et passe le total a HidePolys. Premiere
 		// version : je le lisais pour avancer le curseur, et je le jetais --
@@ -1499,7 +1516,7 @@ void CVitaMesh::DrawSkinned( Mth::Matrix *p_bone_mats, int num_bones,
 		return;
 	}
 
-	// SKINNING PAR LE GPU (issue #18, � gsk 0/1 �). Memes conditions que le
+	// SKINNING PAR LE GPU (issue #18, « gsk 0/1 »). Memes conditions que le
 	// dessin CPU ci-dessous quand il est le plus simple : eclairage coupe,
 	// pas de piece rigide (vehicules : sector_bone), squelette de 64 os au plus.
 	static int s_chemin[4] = { 0, 0, 0, 0 };		// direct, vitaGL, cpu, os/eclairage
@@ -1534,6 +1551,39 @@ void CVitaMesh::DrawSkinned( Mth::Matrix *p_bone_mats, int num_bones,
 		{
 			const SceUInt64 t0 = sceKernelGetProcessTimeWide();
 			float proj[16], mv[16], mvp[16];
+#if defined(__PLAT_LINUX__)
+			NxVita::GetProjMatrix( proj );
+			NxVita::GetViewMatrix( mv );
+			if( sp_racine_courante )
+			{
+				float mv_m[16];
+				const float *rm = (const float *)sp_racine_courante;
+				for( int c = 0; c < 4; ++c )
+					for( int r = 0; r < 4; ++r )
+					{
+						float s = 0.0f;
+						for( int k = 0; k < 4; ++k ) s += mv[k * 4 + r] * rm[c * 4 + k];
+						mv_m[c * 4 + r] = s;
+					}
+				for( int c = 0; c < 4; ++c )
+					for( int r = 0; r < 4; ++r )
+					{
+						float s = 0.0f;
+						for( int k = 0; k < 4; ++k ) s += proj[k * 4 + r] * mv_m[c * 4 + k];
+						mvp[c * 4 + r] = s;
+					}
+			}
+			else
+			{
+				for( int c = 0; c < 4; ++c )
+					for( int r = 0; r < 4; ++r )
+					{
+						float s = 0.0f;
+						for( int k = 0; k < 4; ++k ) s += proj[k * 4 + r] * mv[c * 4 + k];
+						mvp[c * 4 + r] = s;
+					}
+			}
+#else
 			glGetFloatv( GL_PROJECTION_MATRIX, proj );
 			glGetFloatv( GL_MODELVIEW_MATRIX, mv );
 			for( int c = 0; c < 4; ++c )
@@ -1544,7 +1594,8 @@ void CVitaMesh::DrawSkinned( Mth::Matrix *p_bone_mats, int num_bones,
 						s += proj[k * 4 + r] * mv[c * 4 + k];
 					mvp[c * 4 + r] = s;
 				}
-			// GXM direct (� gpk 0/1 �) : il faut un descripteur de texture
+#endif
+			// GXM direct (« gpk 0/1 ») : il faut un descripteur de texture
 			// pour CHAQUE piece, meme non texturee (le shader echantillonne
 			// toujours, puis ignore) -- on prend celui d'une piece texturee.
 			bool direct = NxVita::g_vita_gxm_peau && NxVita::GxmPeauPret();
@@ -1717,7 +1768,12 @@ void CVitaMesh::DrawSkinned( Mth::Matrix *p_bone_mats, int num_bones,
 			// opaques, elles couvraient le dessous de la planche de blanc.
 			for( int passe = 0; passe < 2; ++passe )
 			{
-			if( passe == 1 )
+			if( passe == 0 )
+			{
+				glDisable( GL_BLEND );
+				glDepthMask( GL_TRUE );
+			}
+			else if( passe == 1 )
 			{
 				glEnable( GL_BLEND );
 				glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
@@ -1790,6 +1846,16 @@ cpu:
 	float dif[2][3] = {{ 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }};
 	float dir[2][3] = {{ 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }};
 	bool  lighting_ready = false;
+	bool  silhouette_noire = false;
+	if( !g_vita_lighting && p_lights )
+	{
+		p_lights->ResolveLighting( amb, dif, dir );
+		const float lum = amb[0] + amb[1] + amb[2]
+		                + dif[0][0] + dif[0][1] + dif[0][2]
+		                + dif[1][0] + dif[1][1] + dif[1][2];
+		if( lum < 0.05f )
+			silhouette_noire = true;
+	}
 	if( g_vita_lighting )
 	{
 		if( p_lights )
@@ -1817,7 +1883,7 @@ cpu:
 		lighting_ready = true;
 	}
 
-	// Teinte en entiers 0..256, une fois pour tout l'appel. � Blanche � veut
+	// Teinte en entiers 0..256, une fois pour tout l'appel. ï¿½ Blanche ï¿½ veut
 	// dire : aucune modulation, donc rien a recalculer par piece.
 	int m_tint[4] = { 256, 256, 256, 255 };
 	bool tint_white = true;
@@ -1851,13 +1917,10 @@ cpu:
 	// modeles ignoraient. Le mode 5 lui-meme etait correct : la reference
 	// (DX9/NX/render.cpp, vBLEND_MODE_BLEND) demande SRCALPHA/INVSRCALPHA,
 	// ce que nous posions deja.
-	for( int passe = 0; passe < 2; ++passe )
 	for( int i = 0; i < m_num; ++i )
 	{
 		SGpuMesh *p = &mp_pieces[i];
 
-		if(( p->blend != 0 ) != ( passe == 1 ))
-			continue;
 		if( !p->p_weights || !p->p_bones || !p->p_skinned || !p->p_positions )
 			continue;
 
@@ -1896,6 +1959,21 @@ cpu:
 			float       *p_dst = &p->p_skinned[v * 3];
 
 			unsigned int packed = p->p_weights[v];
+			const float sx = p_src[0], sy = p_src[1], sz = p_src[2];
+
+			// Fast-path: single bone rigid skinning (70%+ of character and clothing vertices)
+			if(( packed & 0xFFFFF800 ) == 0 )
+			{
+				int b = (int)p->p_bones[v * 4];
+				if(( b >= 0 ) && ( b < num_bones ))
+				{
+					const Mth::Matrix &m = p_bone_mats[b];
+					p_dst[0] = ( sx * m[0][0] ) + ( sy * m[1][0] ) + ( sz * m[2][0] ) + m[3][0];
+					p_dst[1] = ( sx * m[0][1] ) + ( sy * m[1][1] ) + ( sz * m[2][1] ) + m[3][1];
+					p_dst[2] = ( sx * m[0][2] ) + ( sy * m[1][2] ) + ( sz * m[2][2] ) + m[3][2];
+					continue;
+				}
+			}
 			float w[3];
 			// Multiplications par l'inverse plutot que divisions : une division
 			// flottante coute une quinzaine de cycles sur Cortex-A9 et ne se
@@ -2042,8 +2120,8 @@ cpu:
 		// LA MATRICE COURANTE DECIDE DE LA DIRECTION DES LUMIERES.
 		//
 		// glLightfv( GL_POSITION ) applique la MODELVIEW du moment. La version
-		// precedente les posait alors que la matrice valait « vue x matrice du
-		// modele » : chaque personnage eclairait donc dans SON repere, et la
+		// precedente les posait alors que la matrice valait Â« vue x matrice du
+		// modele Â» : chaque personnage eclairait donc dans SON repere, et la
 		// direction tournait avec lui. C'est ce qui faisait clignoter et virer
 		// les couleurs d'un modele a l'autre.
 		//
@@ -2110,33 +2188,239 @@ cpu:
 	if( debug_flash )
 		glDisable( GL_DEPTH_TEST );
 
+	for( int passe = 0; passe < 2; ++passe )
+	{
+		if( passe == 0 )
+		{
+			glDisable( GL_BLEND );
+#if defined(__PLAT_LINUX__)
+			glEnable( GL_ALPHA_TEST );
+			glAlphaFunc( GL_GREATER, 0.05f );
+#else
+			glDisable( GL_ALPHA_TEST );
+#endif
+			glDepthMask( GL_TRUE );
+		}
+		else
+		{
+			glEnable( GL_BLEND );
+			glEnable( GL_ALPHA_TEST );
+			glAlphaFunc( GL_GREATER, 1.0f / 255.0f );
+			glDepthFunc( GL_LEQUAL );
+		}
+
+		for( int i = 0; i < m_num; ++i )
+		{
+			SGpuMesh *p = &mp_pieces[i];
+			if( ( !p->p_skinned && !p->vbo ) || p->decal )		// passe 1 (#55) : ce chemin ne melange pas
+			{
+				if( passe == 0 )
+					++skipped;
+				continue;
+			}
+			if(( p->blend != 0 ) != ( passe == 1 ))
+				continue;
+			if( passe == 1 )
+			{
+				const bool additif = ( p->blend == 1 || p->blend == 2 );
+				glBlendFunc( GL_SRC_ALPHA,
+				             additif ? GL_ONE : GL_ONE_MINUS_SRC_ALPHA );
+				glDepthMask( g_vita_zw_peau ? GL_TRUE : GL_FALSE );
+			}
+			++drawn;
+
+			if( p->p_skinned )
+			{
+				glBindBuffer( GL_ARRAY_BUFFER, 0 );
+				glVertexPointer( 3, GL_FLOAT, 0, p->p_skinned );
+			}
+			else if( p->vbo )
+			{
+				glBindBuffer( GL_ARRAY_BUFFER, p->vbo );
+				glVertexPointer( 3, GL_FLOAT, 0, NULL );
+				glBindBuffer( GL_ARRAY_BUFFER, 0 );
+			}
+
+			// Eclairage par sommet quand il a pu etre calcule. Le tableau de
+			// couleurs REMPLACE glColor4f -- la teinte y est deja multipliee.
+			// Une piece sans normales ne peut pas etre eclairee : elle ressortira
+			// claire au milieu d'une silhouette noire. On compte les cas.
+			if( !p->p_skinned_n && !p->p_n_rig )
+			{
+				static int s_nn = 0;
+				if(( s_nn++ % 900 ) < 2 )
+					VLOG( "LUM", "'%s' piece %d : AUCUNE normale (%d sommets)",
+					      m_vita_name, i, p->num_vertices );
+			}
+
+			// Les normales partent au GPU, qui applique l'eclairage pose plus bas.
+			if( p->p_skinned_n && g_vita_lighting && !debug_flash )
+			{
+				glBindBuffer( GL_ARRAY_BUFFER, 0 );
+				glEnableClientState( GL_NORMAL_ARRAY );
+				glNormalPointer( GL_FLOAT, 0, p->p_skinned_n );
+			}
+			else if( p->p_n_rig && g_vita_lighting && !debug_flash )
+			{
+				glBindBuffer( GL_ARRAY_BUFFER, 0 );
+				glEnableClientState( GL_NORMAL_ARRAY );
+				glNormalPointer( GL_FLOAT, 0, p->p_n_rig );
+			}
+			else
+			{
+				glDisableClientState( GL_NORMAL_ARRAY );
+			}
+			if( !silhouette_noire && p->cbo && ( tint_white || p->color_locked ) )
+			{
+				glEnableClientState( GL_COLOR_ARRAY );
+				glBindBuffer( GL_ARRAY_BUFFER, p->cbo );
+				glColorPointer( 4, GL_UNSIGNED_BYTE, 0, NULL );
+				glBindBuffer( GL_ARRAY_BUFFER, 0 );
+			}
+			else
+			{
+				glDisableClientState( GL_COLOR_ARRAY );
+			}
+
+			if( !p->texture && mp_texDict && p->tex_checksum )
+			{
+				CTexture *pt = mp_texDict->GetTexture( p->tex_checksum );
+				if( pt )
+					p->texture = ((CVitaTexture *)pt )->GetGLTexture();
+			}
+
+			peau_cull( p );
+
+			if( debug_flash )
+			{
+				glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+				glDisable( GL_TEXTURE_2D );
+				glColor4f( 1.0f, 0.0f, 1.0f, 1.0f );	// magenta
+			}
+			else if( p->texture && p->uvbo )
+			{
+				glEnable( GL_TEXTURE_2D );
+				++NxVita::g_vita_ordre_modeles;
+				glBindTexture( GL_TEXTURE_2D, p->texture );
+				glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+				glBindBuffer( GL_ARRAY_BUFFER, p->uvbo );
+				glTexCoordPointer( 2, GL_FLOAT, 0, NULL );
+				glBindBuffer( GL_ARRAY_BUFFER, 0 );
+				// Teinte du geom, pas blanc fixe : le patch precedent n'avait
+				// corrige que Draw(), et le skater du menu -- SKINNE -- restait
+				// blanc au lieu de devenir la silhouette noire.
+				if( silhouette_noire )
+					glColor4f( 0.0f, 0.0f, 0.0f, p_rgba ? p_rgba[3] : 1.0f );
+				else if( p_rgba && !p->color_locked )
+					glColor4f( p_rgba[0], p_rgba[1], p_rgba[2], p_rgba[3] );
+				else
+					glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+			}
+			else
+			{
+				glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+				glDisable( GL_TEXTURE_2D );
+				if( silhouette_noire )
+					glColor4f( 0.0f, 0.0f, 0.0f, p_rgba ? p_rgba[3] : 1.0f );
+				else if( p_rgba && !p->color_locked )
+					glColor4f( p_rgba[0], p_rgba[1], p_rgba[2], p_rgba[3] );
+				else
+					glColor4f( 0.8f, 0.8f, 0.85f, 1.0f );
+			}
+
+			const Mth::Matrix *p_mat_os = NULL;
+			Mth::Matrix        compose;
+			if( p->sector_bone >= 0 )
+			{
+				if( p_bone_mats && ( p->sector_bone < num_bones ))
+					p_mat_os = &p_bone_mats[p->sector_bone];
+				else if( mp_hierarchyObjects && m_numHierarchyObjects )
+				{
+					int idx = -1;
+					for( int k = 0; k < m_numHierarchyObjects; ++k )
+					{
+						if( mp_hierarchyObjects[k].GetBoneIndex() == p->sector_bone )
+						{
+							idx = k;
+							break;
+						}
+					}
+					if( idx >= 0 )
+					{
+						compose = mp_hierarchyObjects[idx].GetSetupMatrix();
+						int parent = mp_hierarchyObjects[idx].GetParentIndex();
+						for( int garde = 0;
+						     ( parent >= 0 ) && ( parent < m_numHierarchyObjects )
+						     && ( garde < 8 ); ++garde )
+						{
+							compose *= mp_hierarchyObjects[parent].GetSetupMatrix();
+							parent = mp_hierarchyObjects[parent].GetParentIndex();
+						}
+						p_mat_os = &compose;
+					}
+				}
+			}
+			const bool os_pose = ( p_mat_os != NULL );
+
+			if( os_pose )
+			{
+				glPushMatrix();
+				glMultMatrixf( (const float *)p_mat_os );
+			}
+
+			glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, p->ibo );
+			++g_vita_n_draws;
+			NxVita::BrouillardFixeNoir(( p->blend >= 1 ) && ( p->blend <= 4 ));
+			glDrawElements( GL_TRIANGLE_STRIP, p->num_indices,
+			                GL_UNSIGNED_SHORT, NULL );
+
+			if( os_pose )
+				glPopMatrix();
+			glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+			if( p->cbo && ( tint_white || p->color_locked ) )
+			{
+				glDisableClientState( GL_COLOR_ARRAY );
+			}
+		}
+	}
+
+	glDisable( GL_ALPHA_TEST );
+	glDisable( GL_CULL_FACE );
+
+	// PASSE 2 : DECALQUES / LOGOS (T-shirt logos, deck graphics, stickers, tatouages)
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	glDepthMask( GL_FALSE );
+	glDepthFunc( GL_LEQUAL );
+
 	for( int i = 0; i < m_num; ++i )
 	{
 		SGpuMesh *p = &mp_pieces[i];
-		if( !p->p_skinned || p->decal )		// passe 1 (#55) : ce chemin ne melange pas
-		{
-			++skipped;
+		if( !p->decal || ( !p->p_skinned && !p->vbo ) || !p->uvbo || !p->num_indices )
 			continue;
+
+		if( !p->texture && mp_texDict && p->tex_checksum )
+		{
+			CTexture *pt = mp_texDict->GetTexture( p->tex_checksum );
+			if( pt )
+				p->texture = ((CVitaTexture *)pt )->GetGLTexture();
 		}
+		if( !p->texture )
+			continue;
+
 		++drawn;
 
-		// Tableau CLIENT, conformement a la mesure consignee plus haut : le
-		// VBO dynamique a deja ete essaye ici et coutait plus cher.
-		glVertexPointer( 3, GL_FLOAT, 0, p->p_skinned );
-
-		// Eclairage par sommet quand il a pu etre calcule. Le tableau de
-		// couleurs REMPLACE glColor4f -- la teinte y est deja multipliee.
-		// Une piece sans normales ne peut pas etre eclairee : elle ressortira
-		// claire au milieu d'une silhouette noire. On compte les cas.
-		if( !p->p_skinned_n )
+		if( p->p_skinned )
 		{
-			static int s_nn = 0;
-			if(( s_nn++ % 900 ) < 2 )
-				VLOG( "LUM", "'%s' piece %d : AUCUNE normale (%d sommets)",
-				      m_vita_name, i, p->num_vertices );
+			glBindBuffer( GL_ARRAY_BUFFER, 0 );
+			glVertexPointer( 3, GL_FLOAT, 0, p->p_skinned );
+		}
+		else if( p->vbo )
+		{
+			glBindBuffer( GL_ARRAY_BUFFER, p->vbo );
+			glVertexPointer( 3, GL_FLOAT, 0, NULL );
 		}
 
-		// Les normales partent au GPU, qui applique l'eclairage pose plus bas.
 		if( p->p_skinned_n && g_vita_lighting && !debug_flash )
 		{
 			glEnableClientState( GL_NORMAL_ARRAY );
@@ -2148,69 +2432,22 @@ cpu:
 		}
 		glDisableClientState( GL_COLOR_ARRAY );
 
-		if( debug_flash )
-		{
-			glDisableClientState( GL_TEXTURE_COORD_ARRAY );
-			glDisable( GL_TEXTURE_2D );
-			glColor4f( 1.0f, 0.0f, 1.0f, 1.0f );	// magenta
-		}
-		else if( p->texture && p->uvbo )
-		{
-			glEnable( GL_TEXTURE_2D );
-			++NxVita::g_vita_ordre_modeles;
+		peau_cull( p );
+
+		glEnable( GL_TEXTURE_2D );
 		glBindTexture( GL_TEXTURE_2D, p->texture );
-			glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-			glBindBuffer( GL_ARRAY_BUFFER, p->uvbo );
-			glTexCoordPointer( 2, GL_FLOAT, 0, NULL );
-			glBindBuffer( GL_ARRAY_BUFFER, 0 );
-			// Teinte du geom, pas blanc fixe : le patch precedent n'avait
-			// corrige que Draw(), et le skater du menu -- SKINNE -- restait
-			// blanc au lieu de devenir la silhouette noire.
-			if( p_rgba && !p->color_locked )
-				glColor4f( p_rgba[0], p_rgba[1], p_rgba[2], p_rgba[3] );
-			else
-				glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
-		}
+		poser_passe1( p );
+
+		glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+		glBindBuffer( GL_ARRAY_BUFFER, p->uvbo );
+		glTexCoordPointer( 2, GL_FLOAT, 0, NULL );
+		glBindBuffer( GL_ARRAY_BUFFER, 0 );
+
+		if( p_rgba && !p->color_locked )
+			glColor4f( p_rgba[0], p_rgba[1], p_rgba[2], p_rgba[3] );
 		else
-		{
-			glDisableClientState( GL_TEXTURE_COORD_ARRAY );
-			glDisable( GL_TEXTURE_2D );
-			if( p_rgba && !p->color_locked )
-				glColor4f( p_rgba[0], p_rgba[1], p_rgba[2], p_rgba[3] );
-			else
-				glColor4f( 0.8f, 0.8f, 0.85f, 1.0f );
-		}
+			glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
 
-
-		// MATRICE DE L'OS DU MORCEAU, pour les modeles a parties RIGIDES.
-		//
-		// [VERIFIE sur table] les vehicules n'ont AUCUN drapeau POIDS (0x10) :
-		// leurs six secteurs -- carrosserie, roues -- sont chacun attaches a
-		// UN os, et c'est la matrice de cet os qui les place. Le parseur
-		// jetait cet index (� skip( p_file, 4 ); // index d'os �) et le rendu
-		// n'appliquait rien : toutes les parties se dessinaient empilees a
-		// l'origine du modele. D'ou une voiture � verticale � et amputee de
-		// ses roues, ce qu'aucune rotation seule n'expliquait.
-		//
-		// Le skinning par sommet est un mecanisme DIFFERENT (DrawSkinned) :
-		// les deux ne coexistent pas sur un meme morceau.
-		// D'OU VIENT LA MATRICE DE CE MORCEAU ?
-		//
-		// Deux sources, dans cet ordre :
-		//
-		//  1. les matrices d'os fournies par le moteur, quand le modele est
-		//     ANIME (roues qui tournent) ;
-		//  2. a defaut, la matrice de SETUP de la hierarchie du fichier.
-		//
-		// Le cas 2 n'est pas un repli de fortune, c'est le cas NORMAL des
-		// vehicules : CModel::Render passe deliberement ( NULL, 0 ) quand
-		// l'objet n'est pas anime (� update root position without updating
-		// bones �). Mesure a l'appui : les traces montraient
-		// � os=0 mats=0x0 n=0 � alors que la hierarchie etait bien lue et les
-		// matrices bien calculees en amont.
-		//
-		// La matrice de setup EST la transformation locale de la piece ; sans
-		// animation, c'est exactement ce qu'il faut appliquer.
 		const Mth::Matrix *p_mat_os = NULL;
 		Mth::Matrix        compose;
 		if( p->sector_bone >= 0 )
@@ -2219,16 +2456,6 @@ cpu:
 				p_mat_os = &p_bone_mats[p->sector_bone];
 			else if( mp_hierarchyObjects && m_numHierarchyObjects )
 			{
-				// COMPOSER AVEC LA CHAINE DE PARENTS.
-				//
-				// [SOURCE] car.cpp:187 : � frontTire = obj[2].GetSetupMatrix();
-				// frontTire *= obj[0].GetSetupMatrix(); � -- la matrice d'un
-				// objet est LOCALE a son parent, et doit etre multipliee par
-				// celle du parent pour arriver dans le repere du modele.
-				//
-				// C'est ce qui manquait : appliquer la seule matrice locale
-				// laissait les roues sans la rotation portee par l'objet
-				// racine, dont elles descendent toutes (parent = 0).
 				int idx = -1;
 				for( int k = 0; k < m_numHierarchyObjects; ++k )
 				{
@@ -2241,9 +2468,6 @@ cpu:
 				if( idx >= 0 )
 				{
 					compose = mp_hierarchyObjects[idx].GetSetupMatrix();
-
-					// Remontee bornee : une hierarchie corrompue ne doit pas
-					// boucler indefiniment dans la boucle de rendu.
 					int parent = mp_hierarchyObjects[idx].GetParentIndex();
 					for( int garde = 0;
 					     ( parent >= 0 ) && ( parent < m_numHierarchyObjects )
@@ -2253,7 +2477,6 @@ cpu:
 						parent = mp_hierarchyObjects[parent].GetParentIndex();
 					}
 					p_mat_os = &compose;
-
 				}
 			}
 		}
@@ -2275,6 +2498,11 @@ cpu:
 			glPopMatrix();
 		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	}
+
+	glDepthFunc( GL_LEQUAL );
+	glDepthMask( GL_TRUE );
+	glDisable( GL_BLEND );
+	glDisable( GL_CULL_FACE );
 
 	glDisableClientState( GL_TEXTURE_COORD_ARRAY );
 	glDisableClientState( GL_COLOR_ARRAY );
@@ -2354,6 +2582,7 @@ static void dessiner_peau_reportee( void )
 	static const float blanc[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	(void)blanc;
 	glEnable( GL_DEPTH_TEST );
+	glDepthFunc( GL_LEQUAL );
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 	glDepthMask( g_vita_zw_peau ? GL_TRUE : GL_FALSE );	// XBox : profondeur ecrite en semi-transparent (#46)
@@ -2397,7 +2626,7 @@ static void dessiner_peau_reportee( void )
 		// Apres RenderWorld le test est strict (p_world_render.cpp, fin du
 		// ciel) : on l'y remet.
 		if( p->decal && tex )
-			glDepthFunc( GL_LESS );
+			glDepthFunc( GL_LEQUAL );
 		if( r->eclaire )
 			NxVita::ShaderPeauEclaireeFin();
 		else
@@ -2518,7 +2747,7 @@ bool CVitaGeom::VitaRejouerPose( unsigned image, unsigned fenetre )
 // Objet en pause (CO_PAUSED) : CCompositeObject::Update sort sans mettre ses
 // composants a jour, donc sans plat_render. Appelee de la, sa derniere pose
 // est redessinee a sa place dans la phase logique (#54 : skater cache par la
-// boite � Stat increased �, qui ne passe pas par FrontEnd::PauseGame).
+// boite « Stat increased », qui ne passe pas par FrontEnd::PauseGame).
 void VitaRejouerModele( CModel *p_model )
 {
 	if( !g_vita_rejeu || !p_model )
@@ -2637,7 +2866,7 @@ static void rejouer_poses( void )
 
 void VitaDessinerModelesReportes( void )
 {
-	// Decoupe du poste (issue #69, � pmd �) : rejeu, peau, puis rigides
+	// Decoupe du poste (issue #69, « pmd ») : rejeu, peau, puis rigides
 	// (MW_REPORTES). Appelee entre l'etape MW_REPORTES et VitaMondeFin.
 	NxVita::VitaMondeEtape( NxVita::MW_REP_REJEU );
 	rejouer_poses();		// #54 : avant de vider les files reportees
@@ -2656,7 +2885,7 @@ void VitaDessinerModelesReportes( void )
 	glEnableClientState( GL_VERTEX_ARRAY );
 	NxVita::BrouillardFixe( 1 );		// issue #45
 
-	// � mro � (issue #69) : rien dans la boucle ne touche au melange ni a la
+	// « mro » (issue #69) : rien dans la boucle ne touche au melange ni a la
 	// profondeur (BrouillardFixeNoir ne pose que la couleur du brouillard) :
 	// poses une fois. Matrice, facteur de melange et couleur : seulement
 	// quand ils changent. Dans vitaGL, glLoadMatrixf marque la matrice sale
@@ -2786,7 +3015,7 @@ void VitaDessinerModelesReportes( void )
 
 
 // "rlu 0/1" : eclairage des modeles rigides (XBox instance.cpp:200).
-bool g_vita_rigide_lum = true;
+bool g_vita_rigide_lum = false;
 // "rgp 0/1" (#67) : cet eclairage calcule par le GPU (shader rigide eclaire,
 // p_shader_decor.cpp) au lieu d'eclairer_piece. 0 = chemin CPU. Programme
 // refuse a la compilation : chemin CPU.
@@ -2797,7 +3026,11 @@ bool g_vita_rigide_gpu = false;
 // meme modele s'y ecrasent l'un l'autre, et selon les seuils (50 ms, 1
 // degre, budget de 60) chacun s'affiche tantot avec SON eclairage, tantot
 // avec celui de l'autre -- clignotement clair / moins clair.
+#if defined(__PLAT_LINUX__)
+bool g_vita_lum_instance = false;
+#else
 bool g_vita_lum_instance = true;
+#endif
 
 // Lumieres d'un modele RIGIDE dans l'espace du MODELE : ambiante, puis pour
 // chaque directionnelle sa direction (normalisee) et sa couleur. Memes
@@ -3167,9 +3400,9 @@ void CVitaMesh::Draw( const float *p_rgba,
 			// et on rejette les fragments transparents pour qu'ils ne masquent
 			// rien. Le seuil est haut -- un halo n'a pas de demi-teintes utiles
 			// en dessous, et c'est ce qui laissait un lisere violet a 0,02.
-			glDepthMask( GL_TRUE );
+			glDepthMask( g_vita_zw_peau ? GL_TRUE : GL_FALSE );
 			glEnable( GL_ALPHA_TEST );
-			glAlphaFunc( GL_GREATER, 0.35f );
+			glAlphaFunc( GL_GREATER, 0.05f );
 
 
 		}
@@ -3202,7 +3435,8 @@ void CVitaMesh::Draw( const float *p_rgba,
 		                 ? &sp_lum_inst[i] : NULL;
 		if( lit_p && !rig_p )
 			eclairer_piece( &mp_pieces[i], lum, tex_p, li );
-		if( p->cbo )
+		const bool tint_white = !p_rgba || ( p_rgba[0] >= 0.98f && p_rgba[1] >= 0.98f && p_rgba[2] >= 0.98f && p_rgba[3] >= 0.98f );
+		if( p->cbo && ( tint_white || p->color_locked ) )
 		{
 			glEnableClientState( GL_COLOR_ARRAY );
 			glBindBuffer( GL_ARRAY_BUFFER, ( lit_p && !rig_p )
@@ -3214,6 +3448,13 @@ void CVitaMesh::Draw( const float *p_rgba,
 
 		glBindBuffer( GL_ARRAY_BUFFER, p->vbo );
 		glVertexPointer( 3, GL_FLOAT, 0, NULL );
+
+		if( !p->texture && mp_texDict && p->tex_checksum )
+		{
+			CTexture *pt = mp_texDict->GetTexture( p->tex_checksum );
+			if( pt )
+				const_cast<SGpuMesh*>(p)->texture = ((CVitaTexture *)pt )->GetGLTexture();
+		}
 
 		if( p->texture && p->uvbo )
 		{
@@ -3244,9 +3485,9 @@ void CVitaMesh::Draw( const float *p_rgba,
 		// [VERIFIE sur table] les vehicules n'ont AUCUN drapeau POIDS (0x10) :
 		// leurs six secteurs -- carrosserie, roues -- sont chacun attaches a
 		// UN os, et c'est la matrice de cet os qui les place. Le parseur
-		// jetait cet index (� skip( p_file, 4 ); // index d'os �) et le rendu
+		// jetait cet index (« skip( p_file, 4 ); // index d'os ») et le rendu
 		// n'appliquait rien : toutes les parties se dessinaient empilees a
-		// l'origine du modele. D'ou une voiture � verticale � et amputee de
+		// l'origine du modele. D'ou une voiture « verticale » et amputee de
 		// ses roues, ce qu'aucune rotation seule n'expliquait.
 		//
 		// Le skinning par sommet est un mecanisme DIFFERENT (DrawSkinned) :
@@ -3261,9 +3502,9 @@ void CVitaMesh::Draw( const float *p_rgba,
 		//
 		// Le cas 2 n'est pas un repli de fortune, c'est le cas NORMAL des
 		// vehicules : CModel::Render passe deliberement ( NULL, 0 ) quand
-		// l'objet n'est pas anime (� update root position without updating
-		// bones �). Mesure a l'appui : les traces montraient
-		// � os=0 mats=0x0 n=0 � alors que la hierarchie etait bien lue et les
+		// l'objet n'est pas anime (« update root position without updating
+		// bones »). Mesure a l'appui : les traces montraient
+		// « os=0 mats=0x0 n=0 » alors que la hierarchie etait bien lue et les
 		// matrices bien calculees en amont.
 		//
 		// La matrice de setup EST la transformation locale de la piece ; sans
@@ -3278,8 +3519,8 @@ void CVitaMesh::Draw( const float *p_rgba,
 			{
 				// COMPOSER AVEC LA CHAINE DE PARENTS.
 				//
-				// [SOURCE] car.cpp:187 : � frontTire = obj[2].GetSetupMatrix();
-				// frontTire *= obj[0].GetSetupMatrix(); � -- la matrice d'un
+				// [SOURCE] car.cpp:187 : « frontTire = obj[2].GetSetupMatrix();
+				// frontTire *= obj[0].GetSetupMatrix(); » -- la matrice d'un
 				// objet est LOCALE a son parent, et doit etre multipliee par
 				// celle du parent pour arriver dans le repere du modele.
 				//
@@ -3470,6 +3711,98 @@ void CVitaMesh::Draw( const float *p_rgba,
 		}
 	}
 
+	// PASSE 2 DES MODELES RIGIDES (Menu de pause, skate shop, objets de decor)
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	glDepthMask( GL_FALSE );
+	glDepthFunc( GL_LEQUAL );
+
+	for( int i = 0; i < m_num; ++i )
+	{
+		SGpuMesh *p = &mp_pieces[i];
+		if( !p->decal || !p->vbo || !p->uvbo || !p->num_indices )
+			continue;
+
+		if( !p->texture && mp_texDict && p->tex_checksum )
+		{
+			CTexture *pt = mp_texDict->GetTexture( p->tex_checksum );
+			if( pt )
+				p->texture = ((CVitaTexture *)pt )->GetGLTexture();
+		}
+		if( !p->texture )
+			continue;
+
+		glBindBuffer( GL_ARRAY_BUFFER, p->vbo );
+		glVertexPointer( 3, GL_FLOAT, 0, NULL );
+		glDisableClientState( GL_COLOR_ARRAY );
+
+		glEnable( GL_TEXTURE_2D );
+		glBindTexture( GL_TEXTURE_2D, p->texture );
+		poser_passe1( p );
+
+		glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+		glBindBuffer( GL_ARRAY_BUFFER, p->uvbo );
+		glTexCoordPointer( 2, GL_FLOAT, 0, NULL );
+		glBindBuffer( GL_ARRAY_BUFFER, 0 );
+
+		if( p_rgba && !p->color_locked )
+			glColor4f( p_rgba[0], p_rgba[1], p_rgba[2], p_rgba[3] );
+		else
+			glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+
+		const Mth::Matrix *p_mat_os = NULL;
+		Mth::Matrix        compose;
+		if( p->sector_bone >= 0 )
+		{
+			if( p_bone_mats && ( p->sector_bone < num_bones ))
+				p_mat_os = &p_bone_mats[p->sector_bone];
+			else if( mp_hierarchyObjects && m_numHierarchyObjects )
+			{
+				int idx = -1;
+				for( int k = 0; k < m_numHierarchyObjects; ++k )
+				{
+					if( mp_hierarchyObjects[k].GetBoneIndex() == p->sector_bone )
+					{
+						idx = k;
+						break;
+					}
+				}
+				if( idx >= 0 )
+				{
+					compose = mp_hierarchyObjects[idx].GetSetupMatrix();
+					int parent = mp_hierarchyObjects[idx].GetParentIndex();
+					for( int garde = 0;
+					     ( parent >= 0 ) && ( parent < m_numHierarchyObjects )
+					     && ( garde < 8 ); ++garde )
+					{
+						compose *= mp_hierarchyObjects[parent].GetSetupMatrix();
+						parent = mp_hierarchyObjects[parent].GetParentIndex();
+					}
+					p_mat_os = &compose;
+				}
+			}
+		}
+		const bool os_pose = ( p_mat_os != NULL );
+
+		if( os_pose )
+		{
+			glPushMatrix();
+			glMultMatrixf( (const float *)p_mat_os );
+		}
+
+		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, p->ibo );
+		++g_vita_n_draws;
+		glDrawElements( GL_TRIANGLE_STRIP, p->num_indices,
+		                GL_UNSIGNED_SHORT, NULL );
+		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+
+		if( os_pose )
+			glPopMatrix();
+	}
+	glDepthFunc( GL_LEQUAL );
+	glDepthMask( GL_TRUE );
+	glDisable( GL_BLEND );
+
 	if( rig_actif )
 		NxVita::ShaderRigideEclaireFin();
 	if( rig_gpu )
@@ -3512,7 +3845,7 @@ void CVitaMesh::Draw( const float *p_rgba,
 // liberes independamment.
 // DESACTIVE tant que l'espace d'indices n'est pas compris.
 //
-// Tout le mecanisme est en place et correct : lecture du � .cas.xbx �, masque
+// Tout le mecanisme est en place et correct : lecture du ï¿½ .cas.xbx ï¿½, masque
 // de retrait par vetement, marquage puis insertion de degeneres dans la bande.
 // Il ne trouve pourtant que ~19 triangles sur 1500 entrees.
 //
@@ -3969,10 +4302,10 @@ void CVitaGeom::VitaTraceActif( bool active ) const
 		      ( mp_mesh && mp_mesh->Name()) ? mp_mesh->Name() : "sans nom" );
 }
 
-// � mdl 0/1 � : saute le dessin des modeles (mesure, issue #18).
+// « mdl 0/1 » : saute le dessin des modeles (mesure, issue #18).
 bool g_vita_dessin_modeles = true;
 
-// --- SONDE � pdt � (issue #46) ----------------------------------------------
+// --- SONDE « pdt » (issue #46) ----------------------------------------------
 //
 // Les pietons generiques (ped_male/Head_*, Torso_*, Legs_*) montrent une tete
 // decalee de ~20 unites vers le haut alors que l'etude sur table (squelette,
@@ -4130,10 +4463,9 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 	if( !pRootMatrix )
 		return false;
 
-	if( mp_mesh )
-		VitaRetenirPose( pRootMatrix, ppBoneMatrices, numBones );	// #54
+	VitaRetenirPose( pRootMatrix, ppBoneMatrices, numBones );	// #54
 
-	// Sonde � pdt � : une image complete = jusqu'au retour du premier geom vu.
+	// Sonde « pdt » : une image complete = jusqu'au retour du premier geom vu.
 	bool pdt_ici = false;
 	if( g_vita_pdt )
 	{
@@ -4168,7 +4500,7 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 	// dessinee a m_vita_pos = (0,0,0) -- la geometrie d'un LevelObject est
 	// exportee centree sur l'origine (cfuncs.cpp:6224), donc la tourelle
 	// partait a l'origine du monde, loin de sa caisse.
-	if( m_vita_clone && !mp_mesh )
+	if( ( m_vita_clone || m_vita_suit_modele ) && !mp_mesh )
 	{
 		m_vita_racine    = *pRootMatrix;
 		m_vita_racine_ok = true;
@@ -4183,14 +4515,14 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 	// etait dessine -- d'ou le torse qui ressortait du t-shirt.
 	if( !IsActive())
 	{
-		// Nomme, sinon impossible de distinguer � piece jamais appelee au
-		// rendu � de � piece appelee mais desactivee � -- le pantalon absent
+		// Nomme, sinon impossible de distinguer ï¿½ piece jamais appelee au
+		// rendu ï¿½ de ï¿½ piece appelee mais desactivee ï¿½ -- le pantalon absent
 		// releve de l'un des deux.
 		// DEDUPLIQUEE PAR NOM, comme la liste des dessines.
 		//
 		// La version precedente n'affichait que six lignes toutes les 1800
 		// images : elle pouvait rater completement un objet, et son silence se
-		// lisait a tort comme � cet objet n'est pas desactive �. Un echantillon
+		// lisait a tort comme « cet objet n'est pas desactive ». Un echantillon
 		// trop maigre ne prouve pas une absence.
 		if( g_vita_trace_modeles && mp_mesh )
 		{
@@ -4232,8 +4564,8 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 		static int         s_n = 0;
 
 		// La liste se VIDE a chaque armement de la trace. Sans cela elle reste
-		// muette apres le premier tour, et � aucun nom � se lit a tort comme
-		// � rien n'est dessine � -- ce qui m'a deja fait conclure de travers.
+		// muette apres le premier tour, et « aucun nom » se lit a tort comme
+		// « rien n'est dessine » -- ce qui m'a deja fait conclure de travers.
 		if( g_vita_trace_reset )
 		{
 			s_n = 0;
@@ -4249,8 +4581,8 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 			if( !deja && ( s_n < 256 ))
 			{
 				s_vus[s_n++] = nom;
-				// La POSITION avec le nom : � dessine � ne veut pas dire
-				// � visible �. Un objet soumis au rendu mais pose a l'origine
+				// La POSITION avec le nom : « dessine » ne veut pas dire
+				// « visible ». Un objet soumis au rendu mais pose a l'origine
 				// du monde, ou a mille metres, ne se voit pas davantage qu'un
 				// objet absent -- et les deux se ressemblent a l'ecran.
 				VLOG( "DRAW", "modele dessine #%d : '%s'  en (%.0f %.0f %.0f)",
@@ -4303,7 +4635,7 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 	{
 		Mth::Matrix &rm = *pRootMatrix;
 
-		// Les personnages et les voitures � bougent quand on bouge le stick �.
+		// Les personnages et les voitures ï¿½ bougent quand on bouge le stick ï¿½.
 		// Deux causes possibles et opposees : soit leur position MONDE change
 		// vraiment, soit seule leur projection bouge. On journalise donc la
 		// translation de la matrice racine -- exactement la position utilisee
@@ -4311,7 +4643,7 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 		//
 		// On suit UN objet, identifie par son adresse.
 		//
-		// Premiere version : � les trois premiers modeles de la frame �. Elle
+		// Premiere version : ï¿½ les trois premiers modeles de la frame ï¿½. Elle
 		// ne valait rien -- l'ordre de parcours change, donc chaque battement
 		// montrait des personnages DIFFERENTS, et leurs positions sautaient
 		// sans rien prouver. Une mesure qui ne suit pas le meme sujet ne
@@ -4322,8 +4654,8 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 			// Version precedente : on figeait le premier geom rencontre. C'etait
 			// un objet du menu, qui disparait des l'entree en jeu -- la trace
 			// s'arretait donc avant la seule phase qui nous interesse. Deuxieme
-			// mesure de suite invalidee par sa conception, apres � les trois
-			// premiers modeles de la frame � qui ne suivait pas le meme objet.
+			// mesure de suite invalidee par sa conception, apres ï¿½ les trois
+			// premiers modeles de la frame ï¿½ qui ne suivait pas le meme objet.
 			//
 			// On re-arme donc le suivi des que le sujet n'a plus ete vu depuis
 			// 600 rendus : le nouveau sujet est forcement un objet present
@@ -4335,8 +4667,8 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 			// modeles differents exactement au meme endroit. Si des adresses
 			// distinctes partagent une position dans la MEME frame, tous les
 			// modeles sont dessines avec la matrice du joueur -- ce qui explique
-			// mot pour mot � quand je bouge le stick, les personnages et les
-			// voitures bougent aussi �.
+			// mot pour mot ï¿½ quand je bouge le stick, les personnages et les
+			// voitures bougent aussi ï¿½.
 			//
 			// On journalise donc adresse + position pour les six premiers geoms
 			// d'une frame sur soixante : la comparaison se fait a l'interieur
@@ -4366,7 +4698,7 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 			}
 		}
 
-		// Rayon resserre : 400 etait pose � genereux � avant toute mesure.
+		// Rayon resserre : 400 etait pose ï¿½ genereux ï¿½ avant toute mesure.
 		// Depuis, le rayon SKINNE reel d'un personnage est mesure a ~44
 		// (centre/rayon des pieces) ; 150 couvre pose etendue et marge, et
 		// cesse de skinner les PNJ franchement hors champ.
@@ -4407,7 +4739,26 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 					rayon = r;
 			}
 		}
-		const bool visible = NxVita::SphereVisible( rm[3][0], rm[3][1], rm[3][2], rayon );
+		bool visible = NxVita::SphereVisible( rm[3][0], rm[3][1], rm[3][2], rayon );
+#if defined(__PLAT_LINUX__)
+		if( visible )
+		{
+			const float ex = view[0] * rm[3][0] + view[4] * rm[3][1] + view[8]  * rm[3][2] + view[12];
+			const float ey = view[1] * rm[3][0] + view[5] * rm[3][1] + view[9]  * rm[3][2] + view[13];
+			const float ez = view[2] * rm[3][0] + view[6] * rm[3][1] + view[10] * rm[3][2] + view[14];
+			const float dist_sq = ex * ex + ey * ey + ez * ez;
+			// Aggressive LOD distance culling for RK3326 (Cortex-A35 / Mali-G31):
+			// Pedestrians / characters beyond 2000 units (~50m) and vehicles beyond 3200 units (~80m)
+			// skip CPU skinning, matrix uploads, and draw calls entirely.
+			// Tuned LOD distance culling: 3500 units (~90m) for pedestrians (protects Mike V at 50m) and 4500 units (~115m) for vehicles
+			// Otimizacao agressiva para R36S (RK3326 Cortex-A35 / Mali-G31):
+			// Peds a mais de 2200 unidades (~55m) e veiculos a mais de 3200 (~80m) pulam skinning CPU e draws
+			if(( rayon <= 160.0f ) && ( dist_sq > ( 2200.0f * 2200.0f )))
+				visible = false;
+			else if( dist_sq > ( 3200.0f * 3200.0f ))
+				visible = false;
+		}
+#endif
 
 		// Combien d'instances par frame, combien cullees : c'est le compteur
 		// qui decide de la prochaine optimisation (frequence de skinning,
@@ -4427,11 +4778,11 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 		}
 
 		if( !g_vita_dessin_modeles )
-			return true;	// A/B � mdl 0 � : tout sauf le dessin
+			return true;	// A/B « mdl 0 » : tout sauf le dessin
 		if( !visible )
 		{
 			++g_cpt_dessin[3];	// #48 culle
-			return true;	// � rien a signaler �, pas � echec �
+			return true;	// ï¿½ rien a signaler ï¿½, pas ï¿½ echec ï¿½
 		}
 	}
 
@@ -4478,12 +4829,12 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 	// QUEL AXE POINTE VERS LE HAUT ?
 	//
 	// Le commentaire ci-dessus affirme que la transposition D3D -> OpenGL
-	// � tombe juste �. Ce n'est reste qu'une affirmation : on la mesure.
+	// « tombe juste ». Ce n'est reste qu'une affirmation : on la mesure.
 	// Un objet pose a plat dans le monde doit avoir son vecteur Y proche de
 	// (0,1,0). S'il vaut (0,0,1) ou (0,0,-1), l'objet est bascule de 90 --
-	// exactement � les voitures sont verticales et rentrent dans le sol �.
+	// exactement « les voitures sont verticales et rentrent dans le sol ».
 	{
-		// Periodique et non � les dix premiers � : les premiers modeles rendus
+		// Periodique et non « les dix premiers » : les premiers modeles rendus
 		// sont ceux du menu, tous a l'identite. Ce qui nous interesse est en
 		// JEU. Trois modeles toutes les 600 images.
 		static int s_m = 0;
@@ -4514,7 +4865,7 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 	glDisable( GL_CULL_FACE );
 	glDisable( GL_BLEND );
 
-	// Combien coute REELLEMENT le dessin des modeles ? Le compteur « logique »
+	// Combien coute REELLEMENT le dessin des modeles ? Le compteur Â« logique Â»
 	// de la boucle principale (Mainloop.cpp:556) englobe la mise a jour des
 	// objets ET leur rendu, donc il ne dit pas lequel des deux pese. Sans
 	// cette mesure-ci, optimiser le skinning serait un pari -- et j'en ai deja
@@ -4530,7 +4881,7 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 	{
 		// PAS de compteur ici : DrawSkinned tient deja ses propres bornes,
 		// une pour le calcul et une pour le dessin. Cumuler les deux ici
-		// comptait tout DEUX FOIS -- au point que le � calcul � annonce
+		// comptait tout DEUX FOIS -- au point que le ï¿½ calcul ï¿½ annonce
 		// depassait le total de la fonction qui le contient.
 		const SceUInt64 t_d0 = sceKernelGetProcessTimeWide();
 		g_pic_calc = g_pic_tele = 0; g_pic_n = g_pic_v = 0;
@@ -4659,7 +5010,7 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 	glPopMatrix();
 
 	// Cumul sur 60 frames : un total par geom serait illisible, une moyenne
-	// par frame se compare directement au « logique » de la boucle.
+	// par frame se compare directement au Â« logique Â» de la boucle.
 	{
 		static SceUInt64 s_acc = 0;
 		static int       s_n   = 0;
@@ -4698,7 +5049,7 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 			float cz = -( view[8] * view[12] + view[9] * view[13] + view[10] * view[14] );
 			// Position du modele DANS LE REPERE DE LA CAMERA. En OpenGL, ce
 			// qui est visible a un Z NEGATIF ; un Z positif est derriere
-			// l'observateur. C'est le seul test qui tranche « hors champ ».
+			// l'observateur. C'est le seul test qui tranche Â« hors champ Â».
 			float ex = view[0] * m[12] + view[4] * m[13] + view[8]  * m[14] + view[12];
 			float ey = view[1] * m[12] + view[5] * m[13] + view[9]  * m[14] + view[13];
 			float ez = view[2] * m[12] + view[6] * m[13] + view[10] * m[14] + view[14];
@@ -4716,6 +5067,34 @@ bool CVitaGeom::plat_render( Mth::Matrix *pRootMatrix,
 		      ( mp_mesh && mp_mesh->IsSkinned()) ? "skinne" : "statique",
 		      numBones );
 
+	return true;
+}
+
+void CVitaMesh::RefreshTextures()
+{
+	for( int i = 0; i < m_num; ++i )
+	{
+		SGpuMesh *p = &mp_pieces[i];
+		if( p->tex_checksum && mp_texDict )
+		{
+			CTexture *pt = mp_texDict->GetTexture( p->tex_checksum );
+			if( pt )
+				p->texture = static_cast<CVitaTexture*>( pt )->GetGLTexture();
+		}
+	}
+}
+
+bool CVitaModel::plat_refresh_materials( void )
+{
+	int numGeoms = GetNumGeoms();
+	for( int i = 0; i < numGeoms; ++i )
+	{
+		CVitaGeom *p_geom = static_cast<CVitaGeom*>( mp_geom[i] );
+		if( p_geom && p_geom->Mesh() )
+		{
+			p_geom->Mesh()->RefreshTextures();
+		}
+	}
 	return true;
 }
 

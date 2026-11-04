@@ -264,8 +264,16 @@ void mat_test(Mth::Matrix A,Mth::Matrix B,Mth::Matrix C);
 extern "C" void vita_vgl_init_tot( void );
 extern "C" void vita_ecran_boot_tot( void );
 #endif
+
+__attribute__((constructor)) static void pre_main_probe() {
+    fprintf(stderr, "\n[THUG_PROBE] Global constructors running...\n");
+    fflush(stderr);
+}
+
 int main ( sint argc, char** argv )
 {
+    fprintf(stderr, "\n[THUG_MAIN] === ENTERING MAIN (argc=%d) ===\n", argc);
+    fflush(stderr);
 #ifdef __PLAT_VITA__
 	// PREMIÈRE chose faite : sans ça, tout ce qui suit est muet. C'est
 	// main_vita.cpp qui initialisait le log au palier 0 ; il est sorti du
@@ -399,7 +407,7 @@ int main ( sint argc, char** argv )
 		}
 	}
 
-#	if !defined( __PLAT_NGC__ ) || ( defined( __PLAT_NGC__ ) && !defined( __NOPT_FINAL__ ) )
+#	if defined( __PLAT_NGC__ ) && !defined( __NOPT_FINAL__ )
 	if ( kill )
 	{
 		// Kill printfs

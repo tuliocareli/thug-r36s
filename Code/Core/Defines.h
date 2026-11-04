@@ -326,9 +326,9 @@ typedef signed short		sint16;
 // __int64 est un type MSVC. Sur GCC/ARM c'est long long.
 // int32 reste sur 'long' comme côté Win32 : 32 bits dans les deux cas en
 // ARM32, donc la taille des structures sérialisées ne bouge pas.
-typedef long				int32;
-typedef unsigned long		uint32;
-typedef signed long			sint32;
+typedef int					int32;
+typedef unsigned int		uint32;
+typedef signed int			sint32;
 typedef long long			int64;
 typedef unsigned long long	uint64;
 typedef signed long long	sint64;
@@ -500,22 +500,22 @@ typedef	sint64				nID64;
 
 #define __CPU_WORD_BALIGN__    4		// Memory word byte alignment
 
-#define PTR_ALIGNMASK	 ( vUINT_MAX << __CPU_WORD_BALIGN__)
+#define PTR_ALIGNMASK	 ( (~(uintptr_t)0) << __CPU_WORD_BALIGN__)
 
 // The alignment macros align elements for fastest access
 
-#define nAligned(p) 		( !( (uint) (p) & (~PTR_ALIGNMASK) ) )
-#define nAlignDown(p) 		(void*)( (uint) (p) & PTR_ALIGNMASK )
-#define nAlignUp(p)			(void*)( ( (uint) (p) + ( 1 << __CPU_WORD_BALIGN__ ) - 1 ) & PTR_ALIGNMASK )
-#define nAlignedBy(P,A) 	( !( (uint) (P) & ( ~(vUINT_MAX << (A) ) ) ) )
-#define nAlignDownBy(P,A) 	(void*)( (uint) (P) & (vUINT_MAX << (A) ) )
-#define nAlignUpBy(P,A)		(void*)( ( (uint) (P) + ( 1 << (A) ) - 1 ) & ( vUINT_MAX <<( A ) ) )
+#define nAligned(p) 		( !( (uintptr_t) (p) & (~PTR_ALIGNMASK) ) )
+#define nAlignDown(p) 		(void*)( (uintptr_t) (p) & PTR_ALIGNMASK )
+#define nAlignUp(p)			(void*)( ( (uintptr_t) (p) + ( 1ULL << __CPU_WORD_BALIGN__ ) - 1 ) & PTR_ALIGNMASK )
+#define nAlignedBy(P,A) 	( !( (uintptr_t) (P) & ( ~( (~(uintptr_t)0) << (A) ) ) ) )
+#define nAlignDownBy(P,A) 	(void*)( (uintptr_t) (P) & ( (~(uintptr_t)0) << (A) ) )
+#define nAlignUpBy(P,A)		(void*)( ( (uintptr_t) (P) + ( 1ULL << (A) ) - 1 ) & ( (~(uintptr_t)0) <<( A ) ) )
 #define nStorage(X)			nAlignUp ( (X) + 1 )
 
 /****************************************************************************/
 
-#define	nAddPointer(P,X)		(void*) ( (uint) (p) + (uint) (X) )
-#define	nSubPointer(P,X)		(void*) ( (uint) (p) - (uint) (X) )
+#define	nAddPointer(P,X)		(void*) ( (uintptr_t) (P) + (uintptr_t) (X) )
+#define	nSubPointer(P,X)		(void*) ( (uintptr_t) (P) - (uintptr_t) (X) )
 
 /****************************************************************************/
 

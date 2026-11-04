@@ -83,6 +83,16 @@ void LoadQB(const char *p_fileName, EBoolAssertIfDuplicateSymbols assertIfDuplic
 	uint8 *p_qb=(uint8*)Pip::Load(p_fileName);
 	Mem::Manager::sHandle().PopContext();
 		
+	printf("[LOAD_QB] Pip::Load('%s') -> %p\n", p_fileName, (void*)p_qb);
+	fflush(stdout);
+
+	if (!p_qb)
+	{
+		printf("[LOAD_QB ERROR] '%s' returned NULL from Pip::Load!\n", p_fileName);
+		fflush(stdout);
+		return;
+	}
+
 	// Parse the QB, which creates all the symbols defined within it.
 	ParseQB(p_fileName,p_qb,assertIfDuplicateSymbols);
 	

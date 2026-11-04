@@ -1,61 +1,61 @@
 cmake_minimum_required(VERSION 3.16)
-project(KisakThug)
+project(thug_r36s CXX C ASM)
 
-set(BIN_NAME "KisakThug")
-set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Code")
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR aarch64)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_GENERATOR_PLATFORM "WIN32")
+set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
+set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
+set(CMAKE_ASM_COMPILER aarch64-linux-gnu-gcc)
 
-include(cmake_files.cmake)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++98 -fpermissive -fno-exceptions -fno-rtti -fno-strict-aliasing -march=armv8-a+crc -mtune=cortex-a35 -O3 -fno-math-errno -fno-trapping-math -fomit-frame-pointer -ffunction-sections -fdata-sections -Wno-narrowing -Wno-write-strings")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -march=armv8-a+crc -mtune=cortex-a35 -O3 -fno-math-errno -fno-trapping-math -fomit-frame-pointer -ffunction-sections -fdata-sections")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie -Wl,--gc-sections")
 
-target_compile_definitions(KisakThug PUBLIC WIN32)
-target_compile_definitions(KisakThug PUBLIC _DEBUG)
-target_compile_definitions(KisakThug PUBLIC _CONSOLE)
-target_compile_definitions(KisakThug PUBLIC __PLAT_WN32__)
-target_compile_definitions(KisakThug PUBLIC _CRT_SECURE_NO_WARNINGS)
-target_compile_definitions(KisakThug PUBLIC _WINSOCK_NO_DEPRECATED_NO_WARNINGS)
-target_compile_definitions(KisakThug PUBLIC GSI_NO_THREADS)
-target_compile_definitions(KisakThug PUBLIC KISAK_ORIGINAL_ALLOCATOR)
-#target_compile_definitions(KisakThug PUBLIC KISAK_NO_PRE)
+add_compile_definitions(
+  __PLAT_WN32__
+  __PLAT_VITA__
+  __PLAT_LINUX__
+  KISAK_ORIGINAL_ALLOCATOR
+  THUG_RELEASE
+  THUG_SANS_MENU_VITA
+  _GNU_SOURCE
+  THUG_FMV
+)
 
-target_include_directories(KisakThug PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Code")
-target_include_directories(KisakThug PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Code/Sk")
-target_include_directories(KisakThug PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/SDL2/include")
-target_include_directories(KisakThug PUBLIC "C:\\Program Files (x86)\\Microsoft DirectX SDK (June 2010)\\Include")
+include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}/linux/ffmpeg-bink/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/linux/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/linux
+  ${CMAKE_CURRENT_SOURCE_DIR}/Code
+  ${CMAKE_CURRENT_SOURCE_DIR}/Code/Sk
+  /usr/include/SDL2
+  /usr/include/aarch64-linux-gnu
+)
 
-target_link_directories(KisakThug PUBLIC "C:\\Program Files (x86)\\Microsoft DirectX SDK (June 2010)\\Lib\\x86")
-target_link_directories(KisakThug PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/SDL2")
+set(THUG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
+include("${CMAKE_CURRENT_SOURCE_DIR}/vita/engine.cmake")
 
-set(MSVC_WARNING_DISABLES
- "/wd\"4065\""
- ) #Switch statement with no cases (Used Legitimately)
+set(LINUX_SOURCES
+  linux/platform_linux.cpp
+  linux/audioout.cpp
+  Code/Gel/Movies/Vita/vita_bink.c
+)
 
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT /O2 /MP /W3 ${MSVC_WARNING_DISABLES} /permissive")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd /Od /MP /W3 ${MSVC_WARNING_DISABLES} /permissive")
+add_executable(thug.aarch64 ${LINUX_SOURCES} ${THUG_SOURCES})
 
-if (MSVC AND WIN32 AND NOT MSVC_VERSION VERSION_LESS 142)
-    target_link_options(KisakThug PRIVATE $<$<CONFIG:Debug>:/INCREMENTAL>)
-    target_compile_options(KisakThug PRIVATE $<$<CONFIG:Debug>:/ZI>)
-   
-	set(CMAKE_CXX_FLAGS_DEBUG      "${CMAKE_CXX_FLAGS_DEBUG} /SAFESEH:NO")
-	set(CMAKE_EXE_LINKER_FLAGS_DEBUG    "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /SAFESEH:NO")
-	set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} /SAFESEH:NO")
-	set(CMAKE_MODULE_LINKER_FLAGS_DEBUG "${CMAKE_MODULE_LINKER_FLAGS_DEBUG} /SAFESEH:NO")
-endif()
-
-
-set_property(TARGET KisakThug PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-
-target_link_libraries(KisakThug PUBLIC dinput8.lib dsound.lib dxguid.lib d3dx9d.lib XInput.lib d3d9.lib SDL2.lib Winmm.lib Shlwapi.lib)
-target_link_options(KisakThug PRIVATE /machine:x86)
-set_target_properties(KisakThug PROPERTIES WIN32_EXECUTABLE TRUE)
-
-# --- Visual Studio debugger run configuration (F5) ---
-# CMake makes ALL_BUILD the default startup project, which isn't runnable, and it would
-# launch from the project dir (build/) where the game can't find its assets. Make KisakThug
-# the startup project and run it from its output dir (build/Debug), where the Data/, Faces/
-# and Save/ folders live next to the .exe.
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT KisakThug)
-set_target_properties(KisakThug PROPERTIES
-    VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:KisakThug>")
+target_link_libraries(thug.aarch64
+  -L/usr/lib/aarch64-linux-gnu
+  SDL2
+  GL
+  GLESv2
+  EGL
+  asound
+  ${CMAKE_CURRENT_SOURCE_DIR}/linux/ffmpeg-bink/lib/libavformat.a
+  ${CMAKE_CURRENT_SOURCE_DIR}/linux/ffmpeg-bink/lib/libavcodec.a
+  ${CMAKE_CURRENT_SOURCE_DIR}/linux/ffmpeg-bink/lib/libavutil.a
+  pthread
+  dl
+  m
+  z
+)

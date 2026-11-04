@@ -123,6 +123,12 @@ void CShadowComponent::InitFromStructure( Script::CStruct* pParams )
 	// quand le MSAA est désactivé côté DX9. Le drapeau vient du registre
 	// Windows et n'a pas d'équivalent ici ; le type d'ombre se décidera au
 	// palier 4, quand il y aura des ombres à regarder.
+#if defined(__PLAT_LINUX__)
+	if (m_shadowType == CRCD(0x76A54CD1, "detailed"))
+	{
+		m_shadowType = CRCD(0x3e84c2fd, "simple");
+	}
+#endif
 #if defined(__PLAT_WN32__) && !defined(__PLAT_VITA__)
 	if (m_shadowType == CRCD(0x76A54CD1, "detailed") && !NxXbox::EngineGlobals.g_Registry_options_flag_1_MSAA)
 	{
@@ -188,6 +194,14 @@ void CShadowComponent::InitFromStructure( Script::CStruct* pParams )
 
 void CShadowComponent::update_shadow()
 {
+#if defined(__PLAT_LINUX__)
+	if ( GetObject()->GetID() >= Mdl::Skate::vMAX_SKATERS )
+	{
+		if ( mp_shadow )
+			mp_shadow->Hide();
+		return;
+	}
+#endif
 	if ( mp_shadow )
 	{
 //		Dbg_MsgAssert(mp_shadow->GetShadowType()!=Gfx::vDETAILED_SHADOW,("Tried to update a detailed shadow in MovingObj_Update, will need to change code to send a higher-up position"));

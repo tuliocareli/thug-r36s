@@ -39,13 +39,13 @@ namespace File
 // ux0:data/thug/Data/, donc la racine à préfixer inclut « /Data ».
 // Une première version pointait sur ux0:data/thug et produisait des chemins
 // amputés d'un niveau — aucun fichier trouvé, sans le moindre message.
+#ifdef __PLAT_LINUX__
+static const char *VITA_DATA_ROOT = "Data";
+static const char *VITA_DATA_PROBE = "Data/scripts/qdir.txt";
+#else
 static const char *VITA_DATA_ROOT = "ux0:data/thug/Data";
-
-// Fichier témoin pour vérifier que la racine est la bonne. Vérifier seulement
-// l'existence du DOSSIER ne prouve rien : ux0:data/thug existait bel et bien
-// alors que les chemins construits étaient faux, d'où un « racine OK »
-// trompeur pendant tout un cycle de debug.
 static const char *VITA_DATA_PROBE = "ux0:data/thug/Data/scripts/qdir.txt";
+#endif
 
 // Le moteur passe des chemins relatifs de la forme « data\levels\foo.prx » ou
 // « Data/levels/foo.prx ». On normalise vers un chemin absolu de la console.
@@ -71,6 +71,11 @@ static const char *translate_path( const char *filename )
 	if( rel[0] == '.' && ( rel[1] == '/' || rel[1] == '\\' ))
 		rel += 2;
 
+#ifdef __PLAT_LINUX__
+	if( strncasecmp( rel, "Data/", 5 ) == 0 || strncasecmp( rel, "Data\\", 5 ) == 0 )
+		rel += 5;
+#endif
+
 	snprintf( s_path, sizeof(s_path), "%s/%s", VITA_DATA_ROOT, rel );
 
 	// Backslashes -> slashes. À faire APRÈS la concaténation pour attraper
@@ -90,9 +95,35 @@ static const char *translate_path( const char *filename )
 	//
 	// Note pour une éventuelle version PAL : ce backend choisit .prf/.prg/.prx
 	// selon la langue. Notre dump est USA, donc .prx sans condition.
+#ifndef __PLAT_LINUX__
 	size_t len = strlen( s_path );
 	if(( len >= 4 ) && ( strcmp( s_path + len - 4, ".pre" ) == 0 ))
 		s_path[len - 1] = 'x';
+#else
+	size_t len = strlen( s_path );
+	if(( len >= 4 ) && ( strcmp( s_path + len - 4, ".pre" ) == 0 ))
+	{
+		SceIoStat st;
+		if( sceIoGetstat( s_path, &st ) < 0 )
+		{
+			s_path[len - 1] = 'x';
+			if( sceIoGetstat( s_path, &st ) < 0 )
+			{
+				s_path[len - 1] = 'e';
+			}
+		}
+	}
+	len = strlen( s_path );
+	if(( len >= 4 ) && ( strcmp( s_path + len - 4, ".xbx" ) == 0 ))
+	{
+		SceIoStat st;
+		if( sceIoGetstat( s_path, &st ) < 0 )
+		{
+			// .xbx does not exist on disk (PC loose assets). Strip .xbx!
+			s_path[len - 4] = '\0';
+		}
+	}
+#endif
 
 	return s_path;
 }

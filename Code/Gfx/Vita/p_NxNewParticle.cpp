@@ -68,7 +68,11 @@ namespace NxVita
 // 2026-10-03 (vapeur des tours de NJ). Le mode 1 bornait les particules
 // lointaines a dist/15 et les rendait invisibles ; a cette distance la borne
 // XBox de 64 px des point sprites ne joue pas.
-int g_vita_particules = 4;	// shader (prt 4) par defaut depuis le 2026-10-03 : VC 4575 particules 8,4 -> 1,7 ms, image identique au mode CPU
+#if defined(__PLAT_LINUX__)
+int g_vita_particules = 0; // Desativa simulacao de particulas pesadas na CPU no RK3326 (economiza ~8.4 ms por frame)
+#else
+int g_vita_particules = 4;
+#endif
 
 // p_shader_decor.cpp : compilation CG avec cache disque.
 GLuint CompilerShaderCache( GLenum type, const char *p_source, const char *p_nom );
@@ -281,8 +285,8 @@ static SceUInt64 s_boucle_us = 0;
 // coute au CPU que les tirages et 64 octets ecrits par particule : plafond
 // releve a 6000 (Vancouver en demandait 4575 ; le chemin CPU les a dessinees
 // sans incident avant le plafond, avec des sommets plus gros).
-int g_vita_prt_budget = 2000;
-int g_vita_prt_budget_shd = 6000;
+int g_vita_prt_budget = 300;
+int g_vita_prt_budget_shd = 300;
 static int s_budget_restant = 0;
 static inline unsigned char couleur_x2( float c )
 {
@@ -541,9 +545,8 @@ void CVitaNewParticle::plat_update( void )
 // relue a chaque image (voir l'en-tete).
 void CVitaNewParticle::plat_build( void )
 {
-	// "Reduce emit rate selectively to improve performance." (XBox). Garde :
-	// c'est ce debit que montre xemu, reference visuelle.
-	m_params.m_EmitRate = m_params.m_EmitRate * 0.5f;
+	// "Reduce emit rate selectively to improve performance." (XBox/RK3326).
+	m_params.m_EmitRate = m_params.m_EmitRate * 0.25f;
 
 	// 5 flux, quel que soit m_MaxStreams (XBox l'ignore aussi).
 	m_max_streams		= 5;

@@ -1,19 +1,19 @@
 /*****************************************************************************
-**  THUG-Vita — backend VitaGL                                              **
-**  Code/Gfx/Vita/p_nx.cpp — Nx::CEngine                                    **
+**  THUG-Vita â€” backend VitaGL                                              **
+**  Code/Gfx/Vita/p_nx.cpp â€” Nx::CEngine                                    **
 **                                                                          **
-**  Palier 1 : ces fonctions n'ont qu'un rôle, faire passer l'édition de    **
-**  liens et signaler au palier 2 ce que le moteur atteint réellement.      **
+**  Palier 1 : ces fonctions n'ont qu'un rÃ´le, faire passer l'Ã©dition de    **
+**  liens et signaler au palier 2 ce que le moteur atteint rÃ©ellement.      **
 **  Aucune ne rend un pixel.                                                **
 **                                                                          **
-**  GÉNÉRÉ par vita/tools/gen_stubs.py à partir des déclarations de         **
-**  Code/Gfx/nx.h — les signatures doivent correspondre EXACTEMENT, sinon   **
-**  le symbole reste non résolu et on ne s'en aperçoit qu'au link.          **
-**  Régénérer plutôt que corriger à la main quand nx.h change.              **
+**  GÃ‰NÃ‰RÃ‰ par vita/tools/gen_stubs.py Ã  partir des dÃ©clarations de         **
+**  Code/Gfx/nx.h â€” les signatures doivent correspondre EXACTEMENT, sinon   **
+**  le symbole reste non rÃ©solu et on ne s'en aperÃ§oit qu'au link.          **
+**  RÃ©gÃ©nÃ©rer plutÃ´t que corriger Ã  la main quand nx.h change.              **
 **                                                                          **
 **  Les valeurs de retour sont neutres (false / NULL / 0). Certaines seront  **
-**  fausses au sens du moteur — c'est assumé au palier 1, et c'est          **
-**  précisément ce que les logs VITA_STUB() serviront à repérer au palier 2. **
+**  fausses au sens du moteur â€” c'est assumÃ© au palier 1, et c'est          **
+**  prÃ©cisÃ©ment ce que les logs VITA_STUB() serviront Ã  repÃ©rer au palier 2. **
 *****************************************************************************/
 
 #include <float.h>
@@ -394,7 +394,7 @@ static void probe_alpha_test( void )
 // la matiere. Le moteur interpole de l'une vers l'autre selon cet alpha.
 //
 // Sans ce combineur, on peint le pochoir noir au lieu du beton -- exactement
-// les � arches noires � observees.
+// les « arches noires » observees.
 //
 // Le header declare GL_COMBINE, GL_INTERPOLATE et GL_SRC0..2. Cela ne prouve
 // rien : le DXT5 etait accepte sans que son alpha soit restitue.
@@ -544,7 +544,13 @@ static void probe_multitexture( void )
 // (s_plat_start_engine), et rien ne peut s'afficher avant vglInit -- l'ecran
 // restait noir. Le tas newlib (192 Mo) est reserve au lancement du processus :
 // initialiser vitaGL plus tot ne change rien a la memoire du moteur.
+extern "C" void vita_vgl_init_tot( void );
+
+#ifndef __PLAT_LINUX__
 extern "C" void vita_vgl_init_tot( void )
+#else
+extern "C" void vita_vgl_init_tot_vita( void )
+#endif
 {
 	static bool s_fait = false;
 	if( s_fait )
@@ -570,7 +576,7 @@ extern "C" void vita_vgl_init_tot( void )
 	// a l'ecran pendant le demarrage du moteur. A defaut, l'ancien effacement.
 	if( !vita_ecran_boot())
 	{
-		glClearColor( 0.0f, 0.0f, 0.25f, 1.0f );	// bleu nuit : « le moteur rend »
+		glClearColor( 0.0f, 0.0f, 0.25f, 1.0f );	// bleu nuit : Â« le moteur rend Â»
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		vglSwapBuffers( GL_FALSE );
 	}
@@ -581,14 +587,14 @@ void	CEngine::s_plat_start_engine()
 {
 	VITA_STUB();
 
-	// PAS un stub : c'est ici que vitaGL doit être initialisé.
+	// PAS un stub : c'est ici que vitaGL doit Ãªtre initialisÃ©.
 	//
 	// Au palier 0, main_vita.cpp s'en chargeait. Ce fichier est sorti du build
-	// quand Sk/Main.cpp est devenu le point d'entrée — donc plus personne
+	// quand Sk/Main.cpp est devenu le point d'entrÃ©e â€” donc plus personne
 	// n'initialisait vitaGL, et aucun appel GL n'aurait pu aboutir.
 	//
 	// Rappel du palier 0 : la valeur de retour de vglInit* n'est PAS un statut
-	// de succès, c'est un indicateur de repli de résolution. Ne pas la tester
+	// de succÃ¨s, c'est un indicateur de repli de rÃ©solution. Ne pas la tester
 	// comme une erreur.
 	static bool s_inited = false;
 	if( s_inited )
@@ -637,7 +643,7 @@ void	CEngine::s_plat_start_engine()
 	Script::RunScript( "screen_setup_widescreen" );
 }
 
-// � mem 0/1 � : sonde periodique du tas et des pools vitaGL.
+// « mem 0/1 » : sonde periodique du tas et des pools vitaGL.
 bool g_vita_sonde_memoire = false;
 
 // Traceur d'a-coups : horodatage des etapes d'une image ; toute image de plus
@@ -683,9 +689,9 @@ void	CEngine::s_plat_pre_render()
 	{
 		static int s_f = 0;
 		// [MESURE] Sonde COUTEUSE -- malloc de 96 Mo en descendant, puis
-		// vglMemFree qui parcourt les listes de vitaGL : � reste � montait a
+		// vglMemFree qui parcourt les listes de vitaGL : « reste » montait a
 		// 1,5 ms de moyenne sur 60 images, soit un a-coup toutes les 120
-		// images. Desormais sur demande (� mem 1 �), issue #18.
+		// images. Desormais sur demande (« mem 1 »), issue #18.
 		if( g_vita_sonde_memoire && (( ++s_f % 120 ) == 1 ))
 		{
 			// Le plantage du chargement de niveau est un sprintf qui echoue
@@ -713,8 +719,8 @@ void	CEngine::s_plat_pre_render()
 	//
 	// Le bleu nuit (0,0,38) qui etait ici est INDISCERNABLE du ciel nocturne de
 	// New Jersey. Des heures d'enquete ont pris le tampon efface pour du ciel
-	// vu au travers : � les arches laissent voir la skybox �, � le sol du
-	// bassin affiche la couleur du ciel �. Mesure a l'appui -- dominante
+	// vu au travers : « les arches laissent voir la skybox », « le sol du
+	// bassin affiche la couleur du ciel ». Mesure a l'appui -- dominante
 	// (0,0,38) -- alors que c'etait cette ligne.
 	//
 	// Une couleur d'effacement doit etre IMPOSSIBLE a confondre avec le rendu.
@@ -751,7 +757,7 @@ void	CEngine::s_plat_pre_render()
 	// dessous, plus un anneau de brume translucide (1d9e8ab2, r ~59000).
 	// Sous le bord du dome, XBox melange donc mer et brume avec ce gris-bleu ;
 	// nous les melangions avec le violet de diagnostic.
-	// Violet garde pour le diagnostic : rendu par identifiant (� id 1 �) ou
+	// Violet garde pour le diagnostic : rendu par identifiant (« id 1 ») ou
 	// g_vita_fond_violet (p_world_render.h).
 	if( NxVita::g_vita_fond_violet || NxVita::g_vita_id_debug )
 		glClearColor( 0.45f, 0.05f, 0.65f, 1.0f );
@@ -838,7 +844,7 @@ void	CEngine::s_plat_post_render()
 	// l'inverse. Ne fait rien si aucun chargement n'est en cours.
 	VitaDessineEcranChargementSiActif();
 
-	// Mesure periodique du temps d'image. Sans elle, � ca rame � n'est qu'une
+	// Mesure periodique du temps d'image. Sans elle, « ca rame » n'est qu'une
 	// impression : on ne peut ni comparer deux versions, ni savoir si une
 	// modification a coute ou rapporte.
 	{
@@ -1037,13 +1043,13 @@ bool	CEngine::s_plat_add_scene(CScene *p_scene, const char *p_filename)
 	//
 	// Un niveau n'arrive pas par sLoadScene mais par sAddScene (nx.cpp:434) :
 	// le moteur cree d'abord la scene, puis lui AJOUTE un fichier. En ne
-	// faisant rien ici, on enregistrait bien « scene NJ en place 1/4 » -- d'ou
+	// faisant rien ici, on enregistrait bien Â« scene NJ en place 1/4 Â» -- d'ou
 	// l'illusion que tout allait bien -- mais aucun triangle n'etait lu. Le
 	// monde restait aux 10 maillages du menu et du ciel, et le joueur se
 	// retrouvait dans le vide bleu.
 	//
 	// Le dictionnaire de textures n'est pas passe en parametre. Il porte le
-	// meme chemin que la scene, extension « .tex » (nx.cpp:405) : on le
+	// meme chemin que la scene, extension Â« .tex Â» (nx.cpp:405) : on le
 	// reconstruit plutot que de dessiner un niveau sans textures.
 	char tex_name[160];
 	tex_name[0] = 0;
@@ -1051,7 +1057,7 @@ bool	CEngine::s_plat_add_scene(CScene *p_scene, const char *p_filename)
 	{
 		strncpy( tex_name, p_filename, sizeof( tex_name ) - 1 );
 		tex_name[sizeof( tex_name ) - 1] = 0;
-		// « levels\NJ\NJ.scn.xbx » -> « levels\NJ\NJ.tex »
+		// Â« levels\NJ\NJ.scn.xbx Â» -> Â« levels\NJ\NJ.tex Â»
 		char *p_scn = strstr( tex_name, ".scn" );
 		if( p_scn )
 			strcpy( p_scn, ".tex" );
@@ -1071,6 +1077,29 @@ bool	CEngine::s_plat_add_scene(CScene *p_scene, const char *p_filename)
 	{
 		NxVita::AddSceneToWorld( &geom, p_tex_dict );
 		NxVita::MondeScenePosee( p_scene );
+
+		static unsigned int s_checksums[4096];
+		static float        s_boites[4096 * 6];
+		const int scene_no = NxVita::SceneMondeCourante();
+		const bool is_sky = p_scene ? p_scene->IsSky() : false;
+		const int n = ( scene_no >= 0 )
+		              ? NxVita::ListerSecteurs( s_checksums, 4096, is_sky, scene_no, s_boites )
+		              : 0;
+		int lies = 0;
+		for( int i = 0; i < n; ++i )
+		{
+			CSector *p_sector = p_scene->CreateSector();
+			if( !p_sector )
+				continue;
+			p_sector->SetChecksum( s_checksums[i] );
+			CVitaGeom *p_geom = new CVitaGeom;
+			p_geom->VitaSetSecteur( s_checksums[i] );		// clonage (#29)
+			p_geom->VitaSetOrigine( scene_no, &s_boites[i * 6] );	// #65
+			p_sector->SetGeom( p_geom );
+			p_scene->AddSector( p_sector );
+			lies += NxVita::LierSecteur( s_checksums[i], p_geom->VitaActivePtr(), scene_no );
+		}
+		VLOG( "SCN", "add_scene : %d secteurs enregistres, %d maillages relies", n, lies );
 		return true;
 	}
 
@@ -1098,14 +1127,14 @@ bool	CEngine::s_plat_unload_scene(CScene *p_scene)
 	// qui ne compte que MAX_LOADED_SCENES = 4 places -- ne se vidait jamais.
 	//
 	// Chaine complete, mesuree : mainmenu, CAS_bedroom_Sky, cas_bedroom et
-	// NJ_Sky prenaient les quatre places ; � NJ � arrivait cinquieme et n'etait
+	// NJ_Sky prenaient les quatre places ; ï¿½ NJ ï¿½ arrivait cinquieme et n'etait
 	// pas enregistree. L'assert cense le signaler est compile a vide chez nous,
 	// donc sGetScene("NJ") rendait NULL en silence, et ScriptLoadCollision
 	// appelait LoadCollision sur ce NULL. read_collision ecrit alors dans
 	// this->m_coll_filename, c'est-a-dire a l'adresse 0xd8 -- exactement le R0
 	// du psp2core, et le Data abort tombait DANS sprintf.
 	//
-	// Un � return false � de stub, six maillons plus loin, devient un plantage
+	// Un ï¿½ return false ï¿½ de stub, six maillons plus loin, devient un plantage
 	// dans la libc. C'est le prix des valeurs de retour posees au hasard.
 	//
 	// La geometrie GPU est rendue par MondeSceneRetiree, plus haut, quand la
@@ -1203,15 +1232,15 @@ void	CEngine::s_plat_remove_all_occlusion_polys(void)
 const char *	CEngine::s_plat_get_platform_extension()
 {
 	// PAS un stub : rendre NULL produisait des chemins du genre
-	// « skeletons/anl_horse.ske.(null) » — le moteur concatene cette
+	// Â« skeletons/anl_horse.ske.(null) Â» â€” le moteur concatene cette
 	// extension a beaucoup de noms de fichiers (NxMesh.cpp, NxScene.cpp...).
 	//
-	// Nos assets viennent d'une ISO Xbox, ou les fichiers portent « .xbx »
+	// Nos assets viennent d'une ISO Xbox, ou les fichiers portent Â« .xbx Â»
 	// (NS_Head_Zac.img.xbx).
 	//
 	// SANS le point : les formats appelants l'ajoutent deja
 	// (NxScene.cpp : "levels\\%s\\%s%s.col.%s"). Le rendre avec un point
-	// produisait « anl_horse.ske..xbx ».
+	// produisait Â« anl_horse.ske..xbx Â».
 	return "xbx";
 }
 
@@ -1325,15 +1354,11 @@ bool	CEngine::s_plat_is_visible(Mth::Vector& center, float radius)
 	VITA_STUB();
 
 	if( g_vita_vis )
+	{
 		return NxVita::SphereVisible( center[X], center[Y], center[Z],
 		                              ( radius < 150.0f ) ? 150.0f : radius );
+	}
 
-	// Test de visibilite (sphere contre tronc de vision). Tant qu'il n'est pas
-	// implemente, la seule valeur SURE est true : un culling trop permissif
-	// coute des triangles, un culling trop agressif fait disparaitre des objets
-	// et bloque toute logique qui attend qu'une chose soit visible.
-	//
-	// La version precedente rendait false -- � rien n'est jamais visible �.
 	return true;
 }
 
@@ -1370,15 +1395,15 @@ const char*	CEngine::s_plat_get_soundtrack_name(int soundtrack_number)
 	return NULL;
 }
 
-// --- Premier morceau RÉEL du backend -------------------------------------
+// --- Premier morceau RÃ‰EL du backend -------------------------------------
 //
-// Pas un stub : rendre NULL ici bloquait tout le démarrage du moteur
-// graphique. sSetScreenMode() récupère le viewport actif et appelle
-// GetCamera() dessus sans vérifier le pointeur (le Dbg_MsgAssert qui le
-// protégeait est compilé à vide chez nous) — donc NULL = déréférencement.
+// Pas un stub : rendre NULL ici bloquait tout le dÃ©marrage du moteur
+// graphique. sSetScreenMode() rÃ©cupÃ¨re le viewport actif et appelle
+// GetCamera() dessus sans vÃ©rifier le pointeur (le Dbg_MsgAssert qui le
+// protÃ©geait est compilÃ© Ã  vide chez nous) â€” donc NULL = dÃ©rÃ©fÃ©rencement.
 //
 // CViewport a un constructeur public prenant exactement ces arguments : il
-// n'y a rien de spécifique à la plateforme à faire ici, juste à le
+// n'y a rien de spÃ©cifique Ã  la plateforme Ã  faire ici, juste Ã  le
 // construire. Les backends console font pareil.
 CViewport *CViewportManager::s_plat_create_viewport( const Mth::Rect *rect, Gfx::Camera *cam )
 {
@@ -1396,19 +1421,35 @@ namespace NxVita
 // l'ecran, sous les translucides qui n'ont rien derriere eux.
 bool g_vita_fond_violet = false;
 
-// � fps 30|60 � (p_siodev.cpp). vitaGL attend N vsync par image
+// « fps 30|60 » (p_siodev.cpp). vitaGL attend N vsync par image
 // (gxm.c:265, sceDisplayWaitVblankStartMulti). A 30, chaque image dure
 // exactement 2 vsync : un rythme regulier la ou 60 n'est pas tenu (22 ms
 // mesures en roulant dans New Jersey) et ou les images alternent 1 et 2 vsync.
 // Cadence courante, lue par le menu VITA OPTIONS et ecrite dans controls.txt
 // (cle "framerate", Sys/SIO/Vita/p_siodev.cpp). 60 = reglage de vitaGL au
 // demarrage (vsync_interval = 1, vgl.c).
+#if defined(__PLAT_LINUX__)
 int g_vita_cadence = 60;
+#else
+int g_vita_cadence = 60;
+#endif
+
+#ifdef __PLAT_LINUX__
+#include <SDL.h>
+#endif
 
 void FixerCadence( int images_par_seconde )
 {
 	g_vita_cadence = ( images_par_seconde == 30 ) ? 30 : 60;
+#ifdef __PLAT_LINUX__
+	const char *vsync_env = getenv("THUG_VSYNC");
+	int vsync = (vsync_env != NULL) ? atoi(vsync_env) : 0;
+	if( vsync > 0 && images_par_seconde == 30 )
+		vsync = 2;
+	SDL_GL_SetSwapInterval( vsync );
+#else
 	eglSwapInterval( 0, ( images_par_seconde == 30 ) ? 2 : 1 );
+#endif
 	VLOG( "GFX", "cadence : %d images/s", ( images_par_seconde == 30 ) ? 30 : 60 );
 }
 }

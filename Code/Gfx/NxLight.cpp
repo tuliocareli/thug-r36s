@@ -344,7 +344,6 @@ Image::RGBA			CModelLights::plat_get_light_diffuse_color(int light_index) const
 
 void				CModelLights::plat_update_brightness()
 {
-	printf ("STUB: CModelLights::UpdateBrightness\n");
 }
 
 void				CModelLights::plat_enable_ambient_light(bool enable)

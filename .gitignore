@@ -64,3 +64,11 @@ vita/tools/vita_ip.txt
 vita/sce_sys/*.png
 vita/sce_sys/livearea/contents/*.png
 vita/boot/
+
+# --- Linux Build Outputs ---
+build_linux/
+*.aarch64
+linux/platform_linux.o
+__pycache__/
+*.pyc
+*.swapfile

@@ -44,6 +44,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
+#include <dirent.h>
 
 #include "vita_log.h"
 #include "vita_dbgsrv.h"
@@ -148,12 +149,98 @@ static int thread_audio( SceSize, void * )
 	return sceKernelExitDeleteThread( 0 );
 }
 
-/* -- Video : texture YUV420P3, conversion couleur par le GPU ---------------
- * vitaGL accepte VGL_YUV420P_BT601 (SCE_GXM_TEXTURE_FORMAT_YUV420P3_CSC0) :
- * aucun shader, aucune conversion CPU. Bink 'i' = BT.601 plage limitee.
- * Plans attendus contigus Y, U, V sans pas de ligne : copie directe si
- * c'est deja le cas, sinon tassement ligne par ligne. */
+/* -- Video : texture YUV420P3, conversion couleur par le GPU / CPU ------- */
+#ifdef __PLAT_LINUX__
+static unsigned char	*s_rgba;
 
+static inline unsigned char clamp_u8( int v )
+{
+	if( v < 0 ) return 0;
+	if( v > 255 ) return 255;
+	return (unsigned char)v;
+}
+
+static void televerse( GLuint tex, const VitaBinkFrame &f, int w, int h )
+{
+	const unsigned char *y_plane = f.plane[0];
+	const unsigned char *u_plane = f.plane[1];
+	const unsigned char *v_plane = f.plane[2];
+	int y_pitch = f.pitch[0];
+	int u_pitch = f.pitch[1];
+	int v_pitch = f.pitch[2];
+
+	for( int j = 0; j < h; ++j )
+	{
+		const unsigned char *py = y_plane + j * y_pitch;
+		const unsigned char *pu = u_plane + ( j >> 1 ) * u_pitch;
+		const unsigned char *pv = v_plane + ( j >> 1 ) * v_pitch;
+		unsigned char *pd = s_rgba + j * ( w * 4 );
+
+		for( int i = 0; i < w; ++i )
+		{
+			int y = (int)py[i] - 16;
+			if( y < 0 ) y = 0;
+			int u = (int)pu[i >> 1] - 128;
+			int v = (int)pv[i >> 1] - 128;
+
+			int c = 298 * y;
+			int r = ( c + 409 * v + 128 ) >> 8;
+			int g = ( c - 100 * u - 208 * v + 128 ) >> 8;
+			int b = ( c + 516 * u + 128 ) >> 8;
+
+			pd[0] = clamp_u8( r );
+			pd[1] = clamp_u8( g );
+			pd[2] = clamp_u8( b );
+			pd[3] = 255;
+			pd += 4;
+		}
+	}
+	glBindTexture( GL_TEXTURE_2D, tex );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, s_rgba );
+}
+
+static void dessine( GLuint tex )
+{
+	const float L = 640.0f, H = 480.0f;
+	const float pos[] = { 0, 0,  L, 0,  0, H,  L, H };
+	static const float uv[] = { 0, 0,  1, 0,  0, 1,  1, 1 };
+
+	NxVita::GammaImageDebut();
+	glViewport( 0, 0, 640, 480 );
+	glClearColor( 0, 0, 0, 1 );
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+	glMatrixMode( GL_PROJECTION ); glPushMatrix(); glLoadIdentity(); glOrtho( 0, L, H, 0, -1, 1 );
+	glMatrixMode( GL_MODELVIEW );  glPushMatrix(); glLoadIdentity();
+	glDisable( GL_DEPTH_TEST ); glDisable( GL_CULL_FACE );
+	glDisable( GL_BLEND );      glDisable( GL_ALPHA_TEST ); glDisable( GL_LIGHTING );
+	glColor4f( 1, 1, 1, 1 );
+	glEnable( GL_TEXTURE_2D );
+	glBindTexture( GL_TEXTURE_2D, tex );
+	glBindBuffer( GL_ARRAY_BUFFER, 0 );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+	glEnableClientState( GL_VERTEX_ARRAY );
+	glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+	glDisableClientState( GL_COLOR_ARRAY );
+	glDisableClientState( GL_NORMAL_ARRAY );
+	glVertexPointer( 2, GL_FLOAT, 0, pos );
+	glTexCoordPointer( 2, GL_FLOAT, 0, uv );
+	glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
+	glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+	glDisableClientState( GL_VERTEX_ARRAY );
+
+	glBindTexture( GL_TEXTURE_2D, 0 );
+	glEnable( GL_DEPTH_TEST );
+	glEnable( GL_CULL_FACE );
+	glMatrixMode( GL_MODELVIEW );  glPopMatrix();
+	glMatrixMode( GL_PROJECTION ); glPopMatrix();
+	glMatrixMode( GL_MODELVIEW );
+
+	NxVita::GammaImageFin();
+	vita_dbgsrv_frame();
+	vglSwapBuffers( GL_FALSE );
+}
+#else
 static unsigned char	*s_tasse;					/* w*h*3/2 */
 
 static void televerse( GLuint tex, const VitaBinkFrame &f, int w, int h )
@@ -172,9 +259,6 @@ static void televerse( GLuint tex, const VitaBinkFrame &f, int w, int h )
 		src = s_tasse;
 	}
 	glBindTexture( GL_TEXTURE_2D, tex );
-	// glCompressedTexImage2D et NON glTexImage2D : vitaGL ne connait les
-	// formats planaires que la (textures.c, gpu_alloc_planar_texture). Par
-	// glTexImage2D, les plans etaient lus comme du RGBA : image repetee 4 fois.
 	glCompressedTexImage2D( GL_TEXTURE_2D, 0, VGL_YUV420P_BT601, w, h, 0,
 	                        w * h * 3 / 2, src );
 }
@@ -198,8 +282,6 @@ static void dessine( GLuint tex )
 	glColor4f( 1, 1, 1, 1 );
 	glEnable( GL_TEXTURE_2D );
 	glBindTexture( GL_TEXTURE_2D, tex );
-	// Tampons delies : un tableau de sommets du decor encore attache serait
-	// lu a la place de notre quad (meme garde que l'ecran de chargement).
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	glEnableClientState( GL_VERTEX_ARRAY );
@@ -223,6 +305,7 @@ static void dessine( GLuint tex )
 	vita_dbgsrv_frame();		/* captures vctl pendant le film */
 	vglSwapBuffers( GL_FALSE );
 }
+#endif
 
 /* Copie conforme de Xbox/p_movies.cpp. Les octets 2-3 de GetControlData
  * suivent la disposition PS2 sur Vita (Sys/SIO/Vita/p_siodev.cpp : START =
@@ -248,6 +331,37 @@ static double horloge_us( bool avec_son, int hz, unsigned long long t0 )
 } // namespace
 
 
+#if defined(__PLAT_LINUX__)
+static bool cherche_film( const char *dir_path, const char *nom, char *out, size_t max_len )
+{
+	DIR *d = opendir( dir_path );
+	if( !d ) return false;
+	char alvo[128];
+	snprintf( alvo, sizeof( alvo ), "%s.bik", nom );
+	struct dirent *de;
+	bool achou = false;
+	while(( de = readdir( d )) != NULL ) {
+		if( strcasecmp( de->d_name, alvo ) == 0 ) {
+			snprintf( out, max_len, "%s/%s", dir_path, de->d_name );
+			achou = true;
+			break;
+		}
+		// 8.3 ISO truncation match (e.g. Burnquist -> Burnquis.bik)
+		size_t de_l = strlen( de->d_name );
+		size_t nom_l = strlen( nom );
+		if( nom_l >= 8 && de_l >= 8 &&
+		    strcasecmp( de->d_name + de_l - 4, ".bik" ) == 0 &&
+		    strncasecmp( de->d_name, nom, 8 ) == 0 ) {
+			snprintf( out, max_len, "%s/%s", dir_path, de->d_name );
+			achou = true;
+			break;
+		}
+	}
+	closedir( d );
+	return achou;
+}
+#endif
+
 void PMovies_PlayMovie( const char *pName )
 {
 	// Volume : comme l'Xbox, le plus fort des deux reglages (0..100), a la
@@ -257,27 +371,62 @@ void PMovies_PlayMovie( const char *pName )
 	float sfx_vol	= sfx_manager->GetMainVolume();
 	float vol		= ( music_vol > sfx_vol ? music_vol : sfx_vol ) * 0.01f * 0.5f;
 
-	// "movies\intro" -> ux0:data/thug/Data/movies/bik/intro.bik
+	// "movies\intro" -> Data/movies/bik/intro.bik (ou ux0: na Vita)
 	const char *base = strrchr( pName, '\\' );
 	base = base ? base + 1 : pName;
 	char chemin[256];
+
+#if defined(__PLAT_LINUX__)
+	if( !cherche_film( "Data/movies/bik", base, chemin, sizeof( chemin )) &&
+	    !cherche_film( "Data/movies", base, chemin, sizeof( chemin )) &&
+	    !cherche_film( "data/movies/bik", base, chemin, sizeof( chemin )) &&
+	    !cherche_film( "data/movies", base, chemin, sizeof( chemin )))
+	{
+		snprintf( chemin, sizeof( chemin ), "Data/movies/bik/%s.bik", base );
+	}
+#else
 	snprintf( chemin, sizeof( chemin ), "ux0:data/thug/Data/movies/bik/%s.bik", base );
+#endif
 
 	Pcm::StopMusic();
 	Pcm::StopStreams();
 
 	VitaBinkInfo info;
 	VitaBink *b = vita_bink_open( chemin, &info, audio_cb, NULL, vol );
+#ifndef __PLAT_LINUX__
 	if( !b )
 	{
-		VLOG( "FMV", "%s absent ou illisible : film saute", chemin );
+		snprintf( chemin, sizeof( chemin ), "ux0:data/thug/Data/movies/%s.bik", base );
+		b = vita_bink_open( chemin, &info, audio_cb, NULL, vol );
+	}
+#endif
+	if( !b || info.width <= 0 || info.height <= 0 )
+	{
+		VLOG( "FMV", "%s absent ou invalide : film saute", chemin );
+		if( b ) vita_bink_close( b );
 		return;
 	}
 	VLOG( "FMV", "%s : %dx%d, %d images, %d/%d ips, audio %d Hz x%d, volume %.2f", chemin,
 	      info.width, info.height, info.frames, info.fps_num, info.fps_den,
 	      info.sample_rate, info.channels, vol );
 
+#ifdef __PLAT_LINUX__
+	s_rgba = (unsigned char *)malloc( info.width * info.height * 4 );
+	if( !s_rgba )
+	{
+		VLOG( "FMV", "memoire insuffisante pour texture FMV : film saute" );
+		vita_bink_close( b );
+		return;
+	}
+#else
 	s_tasse = (unsigned char *)malloc( info.width * info.height * 3 / 2 );
+	if( !s_tasse )
+	{
+		VLOG( "FMV", "memoire insuffisante pour texture FMV : film saute" );
+		vita_bink_close( b );
+		return;
+	}
+#endif
 	GLuint tex = 0;
 	glGenTextures( 1, &tex );
 	glBindTexture( GL_TEXTURE_2D, tex );
@@ -364,7 +513,9 @@ void PMovies_PlayMovie( const char *pName )
 				continue;
 			unsigned char *p_data = p_device->GetControlData();
 			quit = sDebounceCheck( &debounce_flags[i], p_data, 0x0800 ) ||	// Start
-			       sDebounceCheck( &debounce_flags[i], p_data, 0x0040 );		// Croix
+			       sDebounceCheck( &debounce_flags[i], p_data, 0x0040 ) ||		// Croix (R36S B)
+			       sDebounceCheck( &debounce_flags[i], p_data, 0x0010 ) ||		// Triangle (R36S X)
+			       sDebounceCheck( &debounce_flags[i], p_data, 0x0080 );		// Carre (R36S Y)
 		}
 		if( quit )
 		{
@@ -386,7 +537,11 @@ void PMovies_PlayMovie( const char *pName )
 	if( s_port >= 0 )   { sceAudioOutReleasePort( s_port ); s_port = -1; }
 	vita_bink_close( b );
 	glDeleteTextures( 1, &tex );
+#ifdef __PLAT_LINUX__
+	free( s_rgba ); s_rgba = NULL;
+#else
 	free( s_tasse ); s_tasse = NULL;
+#endif
 }
 
 } // namespace Flx

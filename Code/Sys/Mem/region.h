@@ -133,7 +133,7 @@ inline int Region::TotalSize( void )
 {
 	
 		
-	return ((int)mp_end - (int)mp_start);
+	return (int)((uintptr_t)mp_end - (uintptr_t)mp_start);
 }
 
 /******************************************************************/

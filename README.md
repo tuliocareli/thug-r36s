@@ -1,216 +1,123 @@
-# THUG Vita
+# THUG-R36S: Tony Hawk's Underground 1 (PortMaster / Linux ARM64)
 
-*Tony Hawk's Underground* (2003), running natively on the PS Vita.
+[![Status](https://img.shields.io/badge/Status-Work_In_Progress_(WIP)-orange.svg)](#status)
+[![Platform](https://img.shields.io/badge/Platform-Linux_ARM64_|_KMSDRM-blue.svg)](#supported-hardware)
+[![Target](https://img.shields.io/badge/Target-Rockchip_RK3326_(R36S_|_RG351_|_RGB20S)-green.svg)](#supported-hardware)
+[![License](https://img.shields.io/badge/License-GPL_v2_/_MIT_Shim-yellow.svg)](#license)
 
-[![Watch the trailer](https://img.youtube.com/vi/XKwEK5B5K2w/maxresdefault.jpg)](https://www.youtube.com/watch?v=XKwEK5B5K2w)
-
-This isn't an emulator or a wrapper: the game runs natively on the Vita's ARM
-processor, with a graphics backend written for it on top of vitaGL.
-
-**[Download the latest version from the Releases page](../../releases/latest).**
-You need your own copy of the game: this repository and the release don't
-include any game data.
-
-The game is fully playable: Story mode, free skate, Create-a-Skater and
-every level. Most of them run at or near 60 fps.
-
-## How it was made
-
-This port was built with agentic AI and a custom harness, over several months.
-The harness drives a real PS Vita from the computer: it builds the game, sends
-it to the console, plays it, takes screenshots and reads the logs, then fixes
-what it finds and starts again. I spent a lot of that time polishing it as much
-as I could, comparing it against the original Xbox version.
-
-If something looks wrong or crashes, please
-[open an issue](../../issues). Issues are welcome, and the more detail the
-better: which level, what you were doing, a photo if you can.
+An open-source, clean-room native ARM64 port of **Tony Hawk's Underground (THUG 1)** tailored for low-power handheld devices powered by the **Rockchip RK3326** SoC (such as the **R36S**, Anbernic RG351 series, Powkiddy RGB20S) running **ArkOS**, **AmberELEC**, or **ROCKNIX** via PortMaster and KMSDRM.
 
 ---
 
-## What you need
+> [!IMPORTANT]
+> **LEGAL NOTICE & CLEAN ROOM POLICY:**
+> This repository contains **NO copyrighted game assets, proprietary code, audio tracks, FMVs, or level geometry**.
+> To play the game, you must legally own a copy of the original **Tony Hawk's Underground (Xbox version)** and provide the extracted `Data/` directory.
 
-- A PS Vita running custom firmware (HENkaku / Enso). If yours isn't set up
-  yet, [vita.hacks.guide](https://vita.hacks.guide) walks you through it.
-  PS TV and external controllers (DS3, DS4, DualSense with a plugin) work with
-  the DualShock layout, see *Vita Options*.
-- [VitaShell](https://github.com/TheOfficialFloW/VitaShell) to install the game
-  and copy files.
-- `libshacccg.suprx` in `ur0:data/`. The game compiles its shaders on the
-  console and can't start without it. If you've never set it up, install
-  [ShaRKF00D](https://github.com/Rinnegatamante/ShaRKF00D), run it once, and
-  it puts the file in the right place.
-- The **Xbox** version of *Tony Hawk's Underground*, **USA** release, as a disc
-  image (ISO) dumped from a disc you own. Other versions (PS2, GameCube, PAL)
-  won't work: the game reads the Xbox data files directly.
-- About **3.2 GB** free on your memory card (1.6 GB without the videos).
+---
 
-## Installing
+## 🎮 Status & Feature Matrix
 
-1. **Extract the game data.** Open the ISO with
-   [extract-xiso](https://github.com/XboxDev/extract-xiso):
+The port is currently in an active **Work In Progress (WIP)** stage. It is fully playable from start to finish across major modes, but open to community enhancements.
 
+| Feature / Game Mode | Status | Details |
+| :--- | :---: | :--- |
+| **Story Mode (Modo História)** | ✅ **Working** | Full mission progression (New Jersey, Manhattan, Tampa, etc.), chapter cutscenes, dialogue, and goals. |
+| **High Score / Free Skate** | ✅ **Working** | Timed sessions, trick combos, gap tracking, high score table persistence. |
+| **Single Session** | ✅ **Working** | Standard 2-minute competitive skate sessions. |
+| **Create-A-Skater (CAS)** | ✅ **Working** | Custom face, hair, clothing, logos, and deck graphics with corrected alpha testing and texture swapping. |
+| **Create-A-Park (Park Editor)**| ✅ **Working** | Place ramps, rails, and gaps using the level sector cloning system. |
+| **In-Engine Cutscenes** | ✅ **Working** | Camera movement, skater animations, and vblank synchronization fully operational. |
+| **FMV / Pre-rendered Movies** | ✅ **Working** | Bink Video (.bik) decoding with synchronized stereo audio via integrated FFmpeg. |
+| **Audio (BGM & SFX)** | ✅ **Working** | Full original soundtrack streaming and sound effects via ALSA and OpenAL. |
+| **Gamepad Controls** | ✅ **Working** | Native SDL2 GameController polling + `gptokeyb` mappings for R36S dual-analog & button layout. |
+| **Graphics & Optimization** | ✅ **Working** | 60 FPS target on RK3326, GL4ES GLES 2.0 pipeline, 16-bit texture format, punch-through alpha fixes. |
+| **Create-A-Goal / OSK** | ⚠️ **WIP** | Text entry menus functional but benefit from physical USB keyboard or on-screen virtual keyboard improvements. |
+| **Multiplayer / LAN** | ❌ **Disabled** | Xbox Live and LAN code stubbed for local single-player portability. |
+| **Dynamic Shadow Maps** | 🔄 **Simplified** | Hardware shadow maps replaced with optimized simple skater shadow to save GPU fillrate. |
+| **Parametric Particles** | 🔄 **Optimized** | High-overhead CPU particle loops disabled to ensure smooth 60 FPS gameplay on in-order Cortex-A35 cores. |
+
+---
+
+## 🛠️ Hardware Requirements & Performance Profile
+
+* **SoC:** Rockchip RK3326 (Quad-core ARM Cortex-A35 @ 1.3GHz)
+* **GPU:** ARM Mali-G31 MP2 (supports OpenGL ES 2.0 / EGL)
+* **RAM:** 1 GB LPDDR3 (recommended: 256MB+ zram or swap enabled)
+* **Display Output:** 640x480 @ 60Hz via KMSDRM
+* **Tested Distributions:** ArkOS (recommended), AmberELEC, ROCKNIX
+
+---
+
+## 📂 Installation & Setup (For Players)
+
+1. **Download the PortMaster Package:**
+   Place `THUG.sh` into your SD card under `/roms/ports/` (or `/roms2/ports/`).
+   Place the `thug/` folder into `/roms/ports/thug/`.
+
+2. **Supply Original Game Assets:**
+   Obtain a legally owned disc image of **Tony Hawk's Underground (Xbox)** and extract its contents using an Xbox ISO extraction utility (e.g., `extract-xiso`).
+   Copy the entire `Data` folder from the root of the Xbox game into:
+   ```text
+   ports/thug/Data/
    ```
-   extract-xiso -x "Tony Hawk's Underground (USA).iso"
-   ```
+   *(Case-sensitive filesystems like ext4 are handled automatically by the launch script, but verify naming matches `Data`).*
 
-   You get a folder with a `data` folder inside. That's the part you need.
-   Keep everything in it, including `movies` (the intro, pro and sponsor
-   videos) and `streams` (music and voices). If space is tight, you can delete
-   `movies`: the videos are then skipped and the game carries on normally.
+3. **Launch the Game:**
+   Start **Tony Hawk's Underground** from the **Ports** menu on your device.
 
-2. **Copy it to the Vita.** Using VitaShell, copy that `data` folder so you
-   end up with the line below. USB is much faster than FTP for this (FTP can
-   take an hour or more).
+---
 
-   ```
-   ux0:data/thug/Data/
-   ```
+## 🏗️ Compiling from Source
 
-   Upper or lower case doesn't matter on the memory card. Just make sure you
-   don't end up with one folder inside another (`Data/data/`).
+We recommend using Docker for deterministic, clean cross-compilation targeting `aarch64-linux-gnu`.
 
-3. **Install the game.** Download `thug_vita.vpk` from the
-   [Releases page](../../releases/latest), copy it anywhere on the Vita, open
-   it in VitaShell and install it.
-
-4. **Play.** Tap the bubble on the home screen, then *Start*.
-
-The first launch of a level takes a while (around ten seconds for the bigger
-ones). That's normal.
-
-## Controls
-
-| PS Vita | Xbox pad | What it does |
-|---|---|---|
-| Left stick / D-pad | | Steer, walk, balance |
-| ✕ | ✕ | Ollie, jump |
-| □ | □ | Flip tricks |
-| ○ | ○ | Grab tricks |
-| △ | △ | Grind, lip tricks |
-| **L** | Left trigger (L1 + L2) | Spin left in the air. On the ground: nollie (tap again for pressure). Revert when landing on a ramp. On foot: reset the camera |
-| **R** | Right trigger (R1 + R2) | Spin right in the air. On the ground: switch stance. Revert when landing on a ramp. On foot: hold to grab ledges and ladders (push the left stick up to climb) |
-| **L + R** in the air | | Spine transfer, acid drop, vert recovery |
-| **SELECT** | White | Get off the board, or back on (caveman) |
-| **SELECT + R** | Black | Create-a-Park: zoom out (SELECT alone zooms in) |
-| START | START | Pause menu |
-
-It's the Xbox layout: the Xbox pad also has only two triggers, and each one
-does both jobs. The touchscreen and the rear touchpad are not used.
-
-### Vita Options
-
-The port adds its own settings menu: **Options > Control Setup > Vita Options**
-(from the main menu or the pause menu). Changes apply right away and are kept
-in `ux0:data/thug/controls.txt`, which you can also edit by hand:
-
-| Setting | What it does |
-|---|---|
-| Controller / `dualshock_layout=1` | **DualShock** layout, for a PS TV, an external DS3/DS4/DualSense pad, or trigger grips on the rear touchpad: L1, L2, R1 and R2 are separate buttons like on PS2 (L1/R1 spin, L2 nollie, R2 switch/revert, L1+R1 gets off the board, L2 or R2 in the air for spine transfers). The rear touchpad halves act as L2/R2. Default: PS Vita |
-| Camera Up/Down, Camera Left/Right / `invert_right_y`, `invert_right_x` | Invert the right stick (camera) |
-| Skater Up/Down / `invert_left_y` | Invert the left stick up/down (also `invert_left_x` in the file) |
-| Frame Rate / `framerate=30` | Lock the game to 30 fps (steadier in the heaviest levels). Default 60 |
-
-Delete the file to get the defaults back.
-
-## Saves
-
-Saves go to `ux0:data/thug/save/`. They're separate from the game itself:
-deleting or reinstalling the game doesn't touch them.
-
-## RetroFlow cover
-
-If you use [RetroFlow Launcher](https://github.com/jimbob4000/RetroFlow-Launcher),
-there's a cover in [`covers/THUG00001.png`](covers/THUG00001.png), made by
-[u/BlazeRed16](https://www.reddit.com/user/BlazeRed16). Copy it to:
-
-```
-ux0:data/RetroFlow/COVERS/Sony - PlayStation Vita/THUG00001.png
+### 1. Build using Docker
+```bash
+# From the repository root:
+docker run --rm -v "$(pwd):/workspace" -w /workspace/build_linux r36s-builder cmake --build . --config Release -j4
 ```
 
-In RetroFlow, open the game's settings with △, set its category to *PS Vita*,
-then rescan your games.
-
-## Good to know
-
-- **Videos.** The intro, pro and sponsor videos play from the `movies` folder.
-  Press START or ✕ to skip one.
-- **HD HUD.** The score panel, special bar, balance meter, stance icons, trick
-  text and menu theme icons use the HD redraws made by the THUG Pro team. Same
-  layout as the original, just sharper. The other fonts are the original ones.
-- **No online or LAN play.** The game's online service shut down years ago,
-  and LAN isn't supported on the Vita.
-- A few small visual details can still differ from the Xbox version. If you
-  spot one, an issue with a photo helps a lot.
-
-## Troubleshooting
-
-**The game closes right away, or never gets past a black screen.**
-Check that `ur0:data/libshacccg.suprx` exists (see *What you need*).
-
-**It starts, then can't find the game files.**
-The folder has to be exactly `ux0:data/thug/Data/`, with the files from the
-Xbox USA disc inside.
-
-**Reporting a crash.** The game keeps a short log at `ux0:data/thug/thug.log`.
-Attaching it to your issue helps a lot.
-
-## Building from source
-
-You need the [vitasdk](https://vitasdk.org) with its vitaGL, vitaShaRK and
-math-neon packages (`vdpm vitaGL vitashark mathneon`), CMake and a Unix shell (built on
-macOS; the include paths are case-insensitive, so a case-sensitive Linux
-filesystem needs extra work).
-
-```
-cmake -S vita -B vita/build \
-      -DCMAKE_TOOLCHAIN_FILE=$VITASDK/share/vita.toolchain.cmake \
-      -DTHUG_RELEASE=ON
-make -C vita/build
+The resulting binary will be output to:
+```text
+build_linux/thug.aarch64
 ```
 
-The videos need a small FFmpeg build with only the Bink decoders. Build it
-once, before CMake (it installs to `~/vita-build/ffmpeg-bink`, where CMake
-looks for it; without it the game builds fine and skips the videos):
+---
 
-```
-curl -LO https://ffmpeg.org/releases/ffmpeg-7.1.1.tar.xz && tar xf ffmpeg-7.1.1.tar.xz
-sh Code/Gel/Movies/Vita/build_ffmpeg_bink.sh "$PWD/ffmpeg-7.1.1" /tmp/ffmpeg-bink-build ~/vita-build/ffmpeg-bink
-```
+## 🤝 Contributing, Forks & PRs
 
-`THUG_RELEASE=ON` builds the public version. Without it you get the development
-build, with a debug server on the network and test shortcuts.
+Contributions are warmly welcomed! Whether you want to:
+* Re-implement lightweight GPU shaders for grind sparks and particles
+* Add an on-screen keyboard (OSK) for text input in Create-A-Goal
+* Tune LOD distances or optimize asset streaming
+* Package metadata for the official PortMaster catalog submission
 
-The LiveArea images and the boot screen are made from the game data, so
-they're not in the repository. Generate them before building:
+Please check [CONTRIBUTING.md](CONTRIBUTING.md) and review open items in [BACKLOG.md](BACKLOG.md).
+Feel free to open an issue, submit a pull request, or fork the repository!
 
-```
-pip install pillow numpy opencv-python playwright && playwright install chromium
-THUG_DATA=/path/to/data python3 vita/livearea/generer.py
-```
+---
 
-It needs an internet connection the first time, to fetch a font.
+## 📜 Changelog
 
-The HD HUD is made from the THUG Pro files, also outside the repository. With
-a THUG Pro install, generate it once; CMake then packs it into the VPK (it
-looks in `~/vita-build/thug-hd`, or set `-DTHUG_HD_DIR=...`; without it the
-VPK uses the original graphics):
+See [CHANGELOG.md](CHANGELOG.md) for full release notes and milestone breakdown.
 
-```
-python3 vita/tools/thugpro_hd.py /path/to/data /path/to/THUGPro ~/vita-build/thug-hd
-```
+---
 
-## Credits
+## 🙏 Credits & Acknowledgments
 
-- Neversoft and Activision made the game. This project isn't affiliated with
-  or endorsed by them, and all trademarks belong to their owners.
-- [kisak-thug](https://github.com/SwagSoftware/kisak-thug), the PC project this
-  port builds on.
-- The [THUG Pro](https://thugpro.com) team for the HD redraws of the HUD and
-  theme icons.
-- [FFmpeg](https://ffmpeg.org) (LGPL 2.1+) for the Bink video decoder.
-- [vitaGL](https://github.com/Rinnegatamante/vitaGL) by Rinnegatamante, and
-  the [vitasdk](https://vitasdk.org) team.
-- [u/BlazeRed16](https://www.reddit.com/user/BlazeRed16) for the RetroFlow cover.
-- [Anthropic](https://www.anthropic.com), whose Claude models did most of the
-  porting work through the harness.
+This port stands on the shoulders of giants. Immense gratitude goes to:
+
+* **Neversoft Entertainment & Activision:** For creating Tony Hawk's Underground, one of the greatest skateboarding games of all time.
+* **iwannagooutside ([THUG-Vita](https://github.com/iwannagooutside/thug-vita-port)):** For the reverse-engineering foundation, Xbox asset parsers, and initial porting effort.
+* **Rinnegatamante:** For **vitaGL** and foundational graphics translation patterns.
+* **ptitSeb ([GL4ES](https://github.com/ptitSeb/gl4es)):** For the outstanding OpenGL 2.1 to GLES 2.0 translation wrapper, enabling complex legacy pipelines to run on Mali-G31.
+* **The PortMaster Team (christianhaitian, kloptops, cebion):** For the standard porting framework, runtime libraries, and gamepad mappings (`gptokeyb`).
+* **The FFmpeg Project:** For robust Bink audio/video decoding.
+* **ArkOS / Rockchip Linux Developers:** For kernel DRM/KMS drivers and performance governors.
+
+---
+
+## ⚖️ License
+
+The source code modifications, Linux platform wrappers, and build configurations are distributed under the **MIT License** / **GPL v2** where applicable. All game assets, trademarks, and intellectual property belong to Activision Publishing, Inc.

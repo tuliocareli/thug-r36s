@@ -282,37 +282,18 @@ void		CSprite::plat_initialize()
 
 void		CSprite::plat_update_hidden()
 {
-	printf ("STUB: PlatUpdateHidden\n");
 }
-
-/******************************************************************/
-/*                                                                */
-/*                                                                */
-/******************************************************************/
 
 void		CSprite::plat_update_engine()
 {
-	printf ("STUB: PlatUpdateEngine\n");
 }
-
-/******************************************************************/
-/*                                                                */
-/*                                                                */
-/******************************************************************/
 
 void		CSprite::plat_update_priority()
 {
-	printf ("STUB: PlatUpdatePriority\n");
 }
-
-/******************************************************************/
-/*                                                                */
-/*                                                                */
-/******************************************************************/
 
 void		CSprite::plat_update_window()
 {
-	printf ("STUB: PlatUpdateWindow\n");
 }
 
 }

@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "name": "thug.zip",
+  "items": [
+    "THUG.sh",
+    "thug/"
+  ],
+  "items_opt": null,
+  "attr": {
+    "title": "Tony Hawk's Underground",
+    "desc": "Native ARM64 Port of Tony Hawk's Underground 1 for Rockchip RK3326 and ARM64 Linux handhelds (R36S / ArkOS).",
+    "inst": "Copie a pasta 'Data' do jogo Tony Hawk's Underground (PC ou Xbox) para ports/thug/Data/.",
+    "genres": [
+      "sports",
+      "action"
+    ],
+    "porter": [],
+    "image": {},
+    "rtr": false,
+    "runtime": null,
+    "reqs": [
+      "640x480",
+      "1GB RAM"
+    ],
+    "arch": [
+      "aarch64"
+    ]
+  }
+}
