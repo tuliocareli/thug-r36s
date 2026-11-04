@@ -1319,7 +1319,7 @@ static void load_sector( void *p_file, SVitaSceneGeom *p_geom )
 			// PAS a la passe 1 : celle-ci lit le jeu 1. Lui donner le jeu 0
 			// echantillonnait le coin (0,0) de sa texture -- fenetres noires,
 			// issue #41. Jeu 0 en dernier recours si le secteur n'en a qu'un.
-			mesh.p_uvs_couche1 = p_uvs2 ? p_uvs2 : ( mesh.env0 ? p_uvs : NULL );
+			mesh.p_uvs_couche1 = p_uvs2 ? p_uvs2 : ( !mesh.env0 ? p_uvs : NULL );
 			if(( mesh.texture_env2 || mesh.env0 ) && p_normals )
 				normales_utiles = true;
 			mesh.p_uvs_x[0]        = p_uvs_x[0];

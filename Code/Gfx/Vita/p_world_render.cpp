@@ -605,6 +605,7 @@ static void poser_adressage( unsigned char u, unsigned char v, GLuint tex = 0 )
 
 static void poser_masque_precedent( bool inverse, GLuint tex2 = 0 )
 {
+	(void)tex2;
 	glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE );
 	glTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB,      GL_INTERPOLATE );
 	glTexEnvi( GL_TEXTURE_ENV, GL_SRC0_RGB,     inverse ? GL_PREVIOUS : GL_TEXTURE );
@@ -612,26 +613,14 @@ static void poser_masque_precedent( bool inverse, GLuint tex2 = 0 )
 	glTexEnvi( GL_TEXTURE_ENV, GL_SRC1_RGB,     inverse ? GL_TEXTURE : GL_PREVIOUS );
 	glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR );
 
-	if( tex2 == 0 )
-	{
-		GLint t = 0;
-		glGetIntegerv( GL_TEXTURE_BINDING_2D, &t );
-		tex2 = (GLuint)t;
-	}
-	if(( tex2 > 0 ) && ( tex2 < 16384 ) && ( Nx::g_vita_tex_alpha_min[tex2] < 250 ))
-	{
-		// Masque present dans le canal alpha de la couche courante (GL_TEXTURE)
-		glTexEnvi( GL_TEXTURE_ENV, GL_SRC2_RGB,     GL_TEXTURE );
-		glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA );
-	}
-	else
-	{
-		glTexEnvi( GL_TEXTURE_ENV, GL_SRC2_RGB,     GL_PREVIOUS );
-		glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA );
-	}
+	// BLEND_PREVIOUS_MASK (12) / INV (13) : le masque provient TOUJOURS de la couche
+	// precedente (GL_PREVIOUS alpha). Utiliser GL_TEXTURE alpha quand alpha_min < 250
+	// inverse/ecrase le masque et fait sortir les batiments et maisons completement noirs.
+	glTexEnvi( GL_TEXTURE_ENV, GL_SRC2_RGB,     GL_PREVIOUS );
+	glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA );
 
 	glTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE );
-	glTexEnvi( GL_TEXTURE_ENV, GL_SRC0_ALPHA,     GL_PRIMARY_COLOR );
+	glTexEnvi( GL_TEXTURE_ENV, GL_SRC0_ALPHA,     GL_PREVIOUS );
 	glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_ALPHA, GL_SRC_ALPHA );
 }
 
@@ -703,9 +692,9 @@ static void poser_env_couche2( unsigned int blend2, const float *c1, GLuint tex2
 			glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR );
 			break;
 		}
-		default:						// DIFFUSE (0), GLOSS_MAP (11) : sans effet
+		default:						// DIFFUSE (0), GLOSS_MAP (11)
 			glTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB,  GL_REPLACE );
-			glTexEnvi( GL_TEXTURE_ENV, GL_SRC0_RGB,     GL_PREVIOUS );
+			glTexEnvi( GL_TEXTURE_ENV, GL_SRC0_RGB,     GL_TEXTURE );
 			glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR );
 			break;
 	}
@@ -3611,7 +3600,7 @@ static void materiau_shader_dessine_m( const SWorldMesh *p, const SShaderMateria
 		GLuint tex0 = p->texture;
 		GLuint uvbo0 = p->uvbo;
 		unsigned char au0 = p->addr_u, av0 = p->addr_v;
-		if( !tex0 && p->texture2 )
+		if(( !tex0 || !uvbo0 ) && p->texture2 && p->uvbo2 )
 		{
 			tex0 = p->texture2;
 			uvbo0 = p->uvbo2;
@@ -4053,7 +4042,7 @@ static int dessiner_lot( SLot *L, bool transp, bool shd, bool shd_mat, int &draw
 			GLuint tex0 = L->texture;
 			GLuint uvbo0 = L->uvbo;
 			unsigned char au0 = L->addr_u, av0 = L->addr_v;
-			if( !tex0 && L->tex_p[0] )
+			if(( !tex0 || !uvbo0 ) && L->tex_p[0] && L->uvbo_p[0] )
 			{
 				tex0 = L->tex_p[0];
 				uvbo0 = L->uvbo_p[0];
@@ -4148,7 +4137,7 @@ static int dessiner_lot( SLot *L, bool transp, bool shd, bool shd_mat, int &draw
 		GLuint tex0 = L->texture;
 		GLuint uvbo0 = L->uvbo;
 		unsigned char au0 = L->addr_u, av0 = L->addr_v;
-		if( !tex0 && L->tex_p[0] )
+		if(( !tex0 || !uvbo0 ) && L->tex_p[0] && L->uvbo_p[0] )
 		{
 			tex0 = L->tex_p[0];
 			uvbo0 = L->uvbo_p[0];
