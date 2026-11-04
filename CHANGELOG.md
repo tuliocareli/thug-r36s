@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Vehicle Wheel Shadow Culling:** Disabled dynamic car wheel shadows and raycast traces on Linux (`m_shadowEnabled = false`).
 * **Static Billboard & VCW Bypass:** Replaced per-frame CPU vertex re-writes for trees and neon signs (`g_vita_billboards = false`, `g_vita_vcw = false`) with static VBO coordinates.
 * **Thread Contention Fix:** Disabled multi-threaded sector list creation semaphores on Linux (`g_vita_listes_mt = false`), eliminating context-switch stalls on in-order Cortex-A35 cores.
-* **Hardware VSync & Frame Pacing:** Configured KMSDRM swap intervals (`LIBGL_VSYNC=1`, `THUG_VSYNC=1`) and adjusted `OncePerRender()` delta smoothing to operate cleanly at native 60 FPS without judder or physics acceleration jumps.
+* **Hardware VSync & Frame Pacing:** Configured KMSDRM swap intervals (`LIBGL_VSYNC=1`, `THUG_VSYNC=1`) and adjusted `OncePerRender()` delta smoothing to improve frame delivery and prevent judder.
 * **Single-Bone Skinning Fast-Path:** Accelerated CPU vertex transformations for rigid single-bone meshes by bypassing float unpacking and 3-bone weight loops for over 70% of character vertices.
 
 ### 🐛 Visual & Graphics Fixes
@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Multi-Texture Pool & Water Shading:** Restored fixed-function layer blend modes (`GL_ADD` for highlights, `GL_MODULATE` for shadows) and corrected layer 2 texture pointer offsets.
 
 ### 🎬 Media & Platform Integration
-* **R36S Gameplay Showcase:** Added real hardware video capture (`docs/media/r36s_gameplay.mp4`) showing New Jersey Story Mode progression, fluid 60 FPS pacing, and fixed CAS/NPC rendering on Rockchip RK3326.
+* **R36S Gameplay Showcase:** Added real hardware video capture (`docs/media/r36s_gameplay.mp4`) showing New Jersey Story Mode progression, playable performance, and fixed CAS/NPC rendering on Rockchip RK3326.
 * **Bink Video Decoding (FMV):** Integrated FFmpeg Bink video (.bik) decoder with synchronized stereo PCM audio streaming in `p_movies.cpp` and `vita_bink.c`.
 * **ALSA / OpenAL Audio Backend:** Implemented background soundtrack streaming and skater SFX with volume balance control and channel unmuting in launcher scripts.
 * **SDL2 KMSDRM Driver:** Added direct KMSDRM framebuffer rendering without X11 or Wayland overhead, matching the native 640x480 resolution of the R36S display.

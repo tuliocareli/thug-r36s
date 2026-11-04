@@ -18,11 +18,11 @@ An open-source, clean-room native ARM64 port of **Tony Hawk's Underground (THUG 
 
 ## 🎮 Status & Feature Matrix
 
-The port is currently in an active **Work In Progress (WIP)** stage. It is fully playable from start to finish across major modes, but open to community enhancements.
+The port is currently in an active **Work In Progress (WIP)** stage. It is playable on RK3326 devices with ongoing optimizations, and open to community enhancements.
 
 | Feature / Game Mode | Status | Details |
 | :--- | :---: | :--- |
-| **Story Mode (Modo História)** | ✅ **Working** | Full mission progression (New Jersey, Manhattan, Tampa, etc.), chapter cutscenes, dialogue, and goals. |
+| **Story Mode (Modo História)** | ⚠️ **Somewhat Playable** | Tested starting in New Jersey with chapter cutscenes and goals working; full progression across all chapters is WIP and not yet fully verified. |
 | **High Score / Free Skate** | ✅ **Working** | Timed sessions, trick combos, gap tracking, high score table persistence. |
 | **Single Session** | ✅ **Working** | Standard 2-minute competitive skate sessions. |
 | **Create-A-Skater (CAS)** | ✅ **Working** | Custom face, hair, clothing, logos, and deck graphics with corrected alpha testing and texture swapping. |
@@ -31,11 +31,11 @@ The port is currently in an active **Work In Progress (WIP)** stage. It is fully
 | **FMV / Pre-rendered Movies** | ✅ **Working** | Bink Video (.bik) decoding with synchronized stereo audio via integrated FFmpeg. |
 | **Audio (BGM & SFX)** | ✅ **Working** | Full original soundtrack streaming and sound effects via ALSA and OpenAL. |
 | **Gamepad Controls** | ✅ **Working** | Native SDL2 GameController polling + `gptokeyb` mappings for R36S dual-analog & button layout. |
-| **Graphics & Optimization** | ✅ **Working** | 60 FPS target on RK3326, GL4ES GLES 2.0 pipeline, 16-bit texture format, punch-through alpha fixes. |
+| **Graphics & Optimization** | ⚠️ **Playable / In Progress** | Playable framerate on RK3326 (~25–40 FPS, slowdowns in complex scenes), GL4ES GLES 2.0 pipeline, 16-bit texture format, punch-through alpha fixes. 60 FPS target is still WIP. |
 | **Create-A-Goal / OSK** | ⚠️ **WIP** | Text entry menus functional but benefit from physical USB keyboard or on-screen virtual keyboard improvements. |
 | **Multiplayer / LAN** | ❌ **Disabled** | Xbox Live and LAN code stubbed for local single-player portability. |
 | **Dynamic Shadow Maps** | 🔄 **Simplified** | Hardware shadow maps replaced with optimized simple skater shadow to save GPU fillrate. |
-| **Parametric Particles** | 🔄 **Optimized** | High-overhead CPU particle loops disabled to ensure smooth 60 FPS gameplay on in-order Cortex-A35 cores. |
+| **Parametric Particles** | 🔄 **Optimized** | High-overhead CPU particle loops disabled to preserve framerate on in-order Cortex-A35 cores. |
 
 ---
 
@@ -46,7 +46,7 @@ Check out the gameplay demonstration running natively on real R36S hardware:
 https://github.com/tuliocareli/thug-r36s/raw/main/docs/media/r36s_gameplay.mp4
 
 > [!TIP]
-> The demonstration video (`docs/media/r36s_gameplay.mp4`) showcases Story Mode in New Jersey, smooth 60 FPS frame pacing, FMV playback, and corrected model rendering (punch-through alpha and proper NPC body parts) on the Rockchip RK3326 handheld.
+> The demonstration video (`docs/media/r36s_gameplay.mp4`) showcases Story Mode in New Jersey, actual playable performance on RK3326 hardware, FMV playback, and corrected model rendering (punch-through alpha and proper NPC body parts) on the handheld.
 
 
 ---
