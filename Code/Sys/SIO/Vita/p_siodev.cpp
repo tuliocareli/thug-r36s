@@ -279,7 +279,13 @@ static void ecran_raccourcis( void )
 // #34) -- personne ne les trouvait. La descente n'est plus L1+R1
 // (trickcomponent.cpp reprend le Xbox_Trigger) : sinon L+R en l'air,
 // le spine transfer, ferait descendre de la planche.
+#ifdef __PLAT_LINUX__
+int g_vita_manette_ds = 1;
+int g_r36s_buttons = 1;
+#else
 int g_vita_manette_ds = 0;
+int g_r36s_buttons = 0;
+#endif
 
 // Pave arriere en disposition DualShock : moitie gauche = L2, droite = R2.
 static void pave_arriere( bool *p_l2, bool *p_r2 )
@@ -349,6 +355,9 @@ static const char s_controls_modele[] =
 	"#    R2 apart, rear touchpad halves = L2/R2, L1+R1 = get off the board.\n"
 	"dualshock_layout=%d\n"
 	"#\n"
+	"# 0: PS2 shapes (Cross, Circle, Square, Triangle), 1: R36S layout (B, A, Y, X).\n"
+	"button_glyphs=%d\n"
+	"#\n"
 	"# Display frame rate cap: 60, or 30 (steadier: every frame lasts 2 vsyncs).\n"
 	"framerate=%d\n";
 
@@ -361,6 +370,7 @@ static bool reglages_ecrire( void )
 	                        s_inv_lx ? 1 : 0, s_inv_ly ? 1 : 0,
 	                        s_inv_rx ? 1 : 0, s_inv_ry ? 1 : 0,
 	                        g_vita_manette_ds ? 1 : 0,
+	                        g_r36s_buttons ? 1 : 0,
 	                        ( NxVita::g_vita_cadence == 30 ) ? 30 : 60 );
 	if(( n <= 0 ) || ( n >= (int)sizeof( buf )))
 		return false;
@@ -379,6 +389,7 @@ static void reglages_appliquer( const char *p_cle, int v )
 	else if( strcmp( p_cle, "invert_right_x" ) == 0 )		s_inv_rx = ( v != 0 );
 	else if( strcmp( p_cle, "invert_right_y" ) == 0 )		s_inv_ry = ( v != 0 );
 	else if( strcmp( p_cle, "dualshock_layout" ) == 0 )		g_vita_manette_ds = ( v != 0 );
+	else if(( strcmp( p_cle, "button_glyphs" ) == 0 ) || ( strcmp( p_cle, "r36s_buttons" ) == 0 )) g_r36s_buttons = ( v != 0 );
 	// Cles des versions 1.0-1.1 (disposition tactile), sans objet depuis la
 	// disposition Xbox : ignorees sans bruit, le fichier est reecrit sans elles
 	// au prochain changement de reglage.
@@ -454,6 +465,7 @@ int VitaReglageValeur( const char *p_cle )
 	if( strcmp( p_cle, "invert_right_x" ) == 0 )	return s_inv_rx ? 1 : 0;
 	if( strcmp( p_cle, "invert_right_y" ) == 0 )	return s_inv_ry ? 1 : 0;
 	if( strcmp( p_cle, "dualshock_layout" ) == 0 )	return g_vita_manette_ds ? 1 : 0;
+	if(( strcmp( p_cle, "button_glyphs" ) == 0 ) || ( strcmp( p_cle, "r36s_buttons" ) == 0 )) return g_r36s_buttons ? 1 : 0;
 	if( strcmp( p_cle, "framerate" ) == 0 )			return ( NxVita::g_vita_cadence == 30 ) ? 30 : 60;
 	return -1;
 }
@@ -2885,8 +2897,8 @@ void Device::read_data( void )
 	bool       l2 = ( pad.buttons & SCE_CTRL_L2 ) != 0, r2 = ( pad.buttons & SCE_CTRL_R2 ) != 0;
 	const bool pg = l1 || l2, pd = r1 || r2;		// disposition Vita : une gachette
 	const bool sel = ( pad.buttons & SCE_CTRL_SELECT ) != 0;
-	const bool noir  = sel && pd;
-	const bool blanc = sel && !pd;
+	const bool noir  = !g_vita_manette_ds && sel && pd;
+	const bool blanc = !g_vita_manette_ds && sel && !pd;
 	if( g_vita_manette_ds )
 		pave_arriere( &l2, &r2 );
 	if( pad.buttons & SCE_CTRL_START )		b2 &= ~( 1 << 3 );
@@ -2897,10 +2909,11 @@ void Device::read_data( void )
 	if( g_vita_manette_ds )
 	{
 		// DualShock : chaque bouton a sa place, comme sur PS2.
+		if( sel )			b2 &= ~( 1 << 0 );	// PS2 SELECT
 		if( l2 )			b3 &= ~( 1 << 0 );
-		if( r2 && !sel )	b3 &= ~( 1 << 1 );
+		if( r2 )			b3 &= ~( 1 << 1 );
 		if( l1 )			b3 &= ~( 1 << 2 );
-		if( r1 && !sel )	b3 &= ~( 1 << 3 );
+		if( r1 )			b3 &= ~( 1 << 3 );
 		if( pad.buttons & SCE_CTRL_L3 )	b2 &= ~( 1 << 1 );
 		if( pad.buttons & SCE_CTRL_R3 )	b2 &= ~( 1 << 2 );
 	}

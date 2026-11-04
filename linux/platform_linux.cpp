@@ -196,6 +196,9 @@ extern "C" int sceCtrlPeekBufferPositiveExt2(int port, SceCtrlData *pad, int cou
         if (SDL_GameControllerGetAxis(g_gamepad, SDL_CONTROLLER_AXIS_TRIGGERLEFT) > 8000) buttons |= SCE_CTRL_L2;
         if (SDL_GameControllerGetAxis(g_gamepad, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) > 8000) buttons |= SCE_CTRL_R2;
 
+        if (SDL_GameControllerGetButton(g_gamepad, SDL_CONTROLLER_BUTTON_LEFTSTICK)) buttons |= SCE_CTRL_L3;
+        if (SDL_GameControllerGetButton(g_gamepad, SDL_CONTROLLER_BUTTON_RIGHTSTICK)) buttons |= SCE_CTRL_R3;
+
         int raw_lx = SDL_GameControllerGetAxis(g_gamepad, SDL_CONTROLLER_AXIS_LEFTX);
         int raw_ly = SDL_GameControllerGetAxis(g_gamepad, SDL_CONTROLLER_AXIS_LEFTY);
         int raw_rx = SDL_GameControllerGetAxis(g_gamepad, SDL_CONTROLLER_AXIS_RIGHTX);

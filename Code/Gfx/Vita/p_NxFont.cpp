@@ -73,6 +73,8 @@ static unsigned char *lire_planche_hd( const char *p_nom, int tw, int th, int *p
 		*p_k = (int)h[1];
 	return p;
 }
+namespace SIO { extern int g_vita_manette_ds; extern int g_r36s_buttons; }
+
 namespace NxVita
 {
 
@@ -125,72 +127,54 @@ void TextUnregister( Nx::CVitaText *p )
 // casse. Les credits (« Manager, Xbox Testing: ») ne sont pas touches.
 // Le texte des elements n'est jamais une cle : les scripts comparent leurs
 // parametres, pas l'affichage.
-struct STexteVita { const char *p_avant; const char *p_apres; };
+struct STexteVita { const char *p_avant; const char *p_apres; int condition; };
 
 static const STexteVita s_textes_vita[] =
 {
-	// « Checking/Saving/Overwriting/Loading/Deleting ... hard disk ... »,
-	// « No THUG %n present on hard disk. », Create-A-Skater (memcardmessages.q)
-	{ "hard disk",					"memory card" },
-	// « Save trick to Hard Drive » (catmenu.q:520, trick slots pleins)
-	{ "Hard Drive",					"Memory Card" },
-	// « Please do not turn off your Xbox console. »
-	{ "your Xbox console",			"your PS Vita system" },
-	// « Your Xbox does not have enough free blocks to save ... »
-	{ "Your Xbox",					"Your memory card" },
-	// « Unable to load %s. Press A to continue. » -> icone de l'action Go
-	// (\m0 -> \b3 = croix, meta_button_map_xbox, gamemenu.q:105)
-	{ "Press A to continue",		"Press \\m0 to continue" },
-	// « Please reconnect the controller to port %i and press START ... »
-	{ "the controller to port ",	"controller " },
-	// Jeu en reseau local Xbox : menu principal, titre du skateshop,
-	// fichier de reglages, messages de cable (skateshop.q:1754, netmessages.q)
-	{ "System Link",				"LAN" },
-	{ "SYSTEM LINK",				"LAN" },
-	{ "system link",				"LAN" },
+	// Memcard / system text
+	{ "hard disk",					"memory card", 0 },
+	{ "Hard Drive",					"Memory Card", 0 },
+#ifdef __PLAT_LINUX__
+	{ "your Xbox console",			"your console", 0 },
+	{ "Your Xbox",					"Your device", 0 },
+#else
+	{ "your Xbox console",			"your PS Vita system", 0 },
+	{ "Your Xbox",					"Your memory card", 0 },
+#endif
+	{ "Press A to continue",		"Press \\m0 to continue", 0 },
+	{ "the controller to port ",	"controller ", 0 },
+	{ "System Link",				"LAN", 0 },
+	{ "SYSTEM LINK",				"LAN", 0 },
+	{ "system link",				"LAN", 0 },
 
-	// --- Boutons Blanc et Noir (disposition Xbox, voir p_siodev.cpp) ------
-	// Les icones 16 et 17 sont Blanc et Noir dans ButtonsXbox, mais L2 et R2
-	// dans ButtonsPs2, la police de boutons chargee chez nous : a l'ecran,
-	// " \bg/\bh = Zoom " de l'editeur de parc affichait " L2/R2 ". La Vita
-	// n'a ni L2 ni icone SELECT : on ecrit le nom de la touche en clair.
-	// SELECT = Blanc, SELECT + R = Noir (p_siodev.cpp, read_data).
-	//
-	// Avant les balises seules : meme position de depart, le premier motif
-	// de la table l'emporte. Conseils de l'ecole de THPS4 (goal_tips.q,
-	// sch_goal_*, sans niveau dans THUG) : " spine buttons (\bg or \bh) "
-	// visait L2/R2 de la PS2 ; le spine transfer est L + R (\bi).
-	{ "(\\bg or \\bh)",			"(\\bi)" },
-	// \bN direct : editeurs de parc, de rails, de gaps et Create-A-Goal
-	// (helper_text.q, variantes _xbox : " \bg/\bh = Zoom ",
-	// " \be/\bf/\bg/\bh = Adjust "). La paire en forme courte : la barre
-	// d'aide de l'editeur de rails (6 elements) depasserait 640 de large
-	// avec " SELECT/SELECT+R " (estime d'apres dialog.fnt.xbx).
-	{ "\\bg/\\bh",					"SELECT(+R)" },
-	{ "\\bg",						"SELECT" },
-	{ "\\bh",						"SELECT+R" },
-	// \mN : actions traduites par meta_button_map_xbox (gamemenu.q) en 16
-	// (n : pad_alt2 = Blanc) ou 17 (j : pad_alt = Noir ; m : descendre de la
-	// planche = Noir, mais Blanc = Alt_Trigger le fait aussi,
-	// switch_control.q:5 -- on affiche la touche simple). CTextElement
-	// remplace \m par \b APRES cette table : les deux formes sont couvertes.
-	{ "\\mm",						"SELECT" },		// " Tap \mm to get on or off the board "
-	{ "\\mn",						"SELECT" },		// " \mn=Reset " (couleurs du CAS)
-	{ "\\mj",						"SELECT+R" },	// " \mj = Zoom " (CAS), " (\mj) " (CAT)
-	// Ecran de couleurs du CAS, branche isXbox (colormenu.q).
-	{ "Left Thumbstick",			"Left Stick" },
-	{ "Right Thumbstick",			"Right Stick" },
+	// Vita workarounds (only without DualShock / external triggers)
+	{ "(\\bg or \\bh)",			"(\\bi)", 1 },
+	{ "\\bg/\\bh",					"SELECT(+R)", 1 },
+	{ "\\bg",						"SELECT", 1 },
+	{ "\\bh",						"SELECT+R", 1 },
+	{ "\\mm",						"SELECT", 1 },
+	{ "\\mn",						"SELECT", 1 },
+	{ "\\mj",						"SELECT+R", 1 },
+
+	// DualShock / R36S layout (L1/R1 and L2/R2 separated, get off board is L1+R1)
+	{ "\\mm",						"L1 + R1", 2 },
+
+	{ "Left Thumbstick",			"Left Stick", 0 },
+	{ "Right Thumbstick",			"Right Stick", 0 },
 };
 
 static const int NUM_TEXTES_VITA = sizeof( s_textes_vita ) / sizeof( s_textes_vita[0] );
 
-// Premier motif present a partir de p, et sa position ; NULL si aucun.
 static const STexteVita *motif_suivant( const char *p, const char **pp_pos )
 {
 	const STexteVita *p_best = NULL;
 	const char *p_best_pos = NULL;
 	for( int i = 0; i < NUM_TEXTES_VITA; ++i )
 	{
+		if( s_textes_vita[i].condition == 1 && ::SIO::g_vita_manette_ds )
+			continue;
+		if( s_textes_vita[i].condition == 2 && !::SIO::g_vita_manette_ds )
+			continue;
 		const char *q = strstr( p, s_textes_vita[i].p_avant );
 		if( q && ( !p_best_pos || ( q < p_best_pos )))
 		{
@@ -351,7 +335,22 @@ const SVitaGlyph *CVitaFont::ParseTag( const char **pp, CVitaFont **pp_font ) co
 					*pp_font = sp_buttons_font;
 					g = sp_buttons_font->GetSpecialGlyph( n );
 				}
-				if( sp_buttons_lr && (( n == 14 ) || ( n == 15 ) || ( n == 18 )))
+				if( ::SIO::g_r36s_buttons && sp_buttons_lr && ( n >= 0 && n <= 3 ))
+				{
+					// Disposition R36S (boutons Nintendo ABXY) :
+					// n=0 (Grind / Cima / Triangulo)    -> X (ButtonsXbox 1)
+					// n=1 (Flip / Esquerda / Quadrado) -> Y (ButtonsXbox 0)
+					// n=2 (Grab / Direita / Circulo)   -> A (ButtonsXbox 3)
+					// n=3 (Ollie / Bas / Cruz)         -> B (ButtonsXbox 2)
+					static const int s_r36s_map[4] = { 1, 0, 3, 2 };
+					const SVitaGlyph *g_r36s = sp_buttons_lr->GetSpecialGlyph( s_r36s_map[n] );
+					if( g_r36s )
+					{
+						*pp_font = sp_buttons_lr;
+						g = g_r36s;
+					}
+				}
+				else if( !::SIO::g_vita_manette_ds && sp_buttons_lr && (( n == 14 ) || ( n == 15 ) || ( n == 18 )))
 				{
 					const SVitaGlyph *g_lr = sp_buttons_lr->GetSpecialGlyph( n );
 					if( g_lr )
