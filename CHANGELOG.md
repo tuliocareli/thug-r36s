@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Multi-Texture Pool & Water Shading:** Restored fixed-function layer blend modes (`GL_ADD` for highlights, `GL_MODULATE` for shadows) and corrected layer 2 texture pointer offsets.
 
 ### 🎬 Media & Platform Integration
+* **R36S Gameplay Showcase:** Added real hardware video capture (`docs/media/r36s_gameplay.mp4`) showing New Jersey Story Mode progression, fluid 60 FPS pacing, and fixed CAS/NPC rendering on Rockchip RK3326.
 * **Bink Video Decoding (FMV):** Integrated FFmpeg Bink video (.bik) decoder with synchronized stereo PCM audio streaming in `p_movies.cpp` and `vita_bink.c`.
 * **ALSA / OpenAL Audio Backend:** Implemented background soundtrack streaming and skater SFX with volume balance control and channel unmuting in launcher scripts.
 * **SDL2 KMSDRM Driver:** Added direct KMSDRM framebuffer rendering without X11 or Wayland overhead, matching the native 640x480 resolution of the R36S display.
@@ -37,3 +38,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0-vita] - Initial PlayStation Vita Baseline
 * Initial proof-of-concept Xbox format parser and VitaGL backend by `iwannagooutside`.
+

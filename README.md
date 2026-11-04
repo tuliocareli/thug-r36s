@@ -39,6 +39,18 @@ The port is currently in an active **Work In Progress (WIP)** stage. It is fully
 
 ---
 
+## 📹 Gameplay Demonstration (R36S / RK3326)
+
+Check out the gameplay demonstration running natively on real R36S hardware:
+
+https://github.com/tuliocareli/thug-r36s/raw/main/docs/media/r36s_gameplay.mp4
+
+> [!TIP]
+> The demonstration video (`docs/media/r36s_gameplay.mp4`) showcases Story Mode in New Jersey, smooth 60 FPS frame pacing, FMV playback, and corrected model rendering (punch-through alpha and proper NPC body parts) on the Rockchip RK3326 handheld.
+
+
+---
+
 ## 🛠️ Hardware Requirements & Performance Profile
 
 * **SoC:** Rockchip RK3326 (Quad-core ARM Cortex-A35 @ 1.3GHz)

@@ -77,3 +77,4 @@ When opening an Issue, please include:
 2. **Distribution & Version:** (e.g. ArkOS 04242024, AmberELEC 20240315)
 3. **Exact Steps to Reproduce:** Level, mission, or action performed.
 4. **Log Output:** Attach `ports/thug/log.txt` and `ports/thug/launcher.log`.
+

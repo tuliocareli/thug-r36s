@@ -48,3 +48,4 @@ Contributors are encouraged to pick any of these items and submit Pull Requests!
 
 ### 8. Local Ad-Hoc Multiplayer (Wi-Fi)
 * **Idea:** Re-implement the Xbox system-link / LAN socket layer using standard Linux POSIX sockets (`sys/socket.h`), enabling two R36S consoles with OTG Wi-Fi to play HORSE, Graffiti, and Trick Attack.
+
