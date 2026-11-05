@@ -12,8 +12,40 @@ namespace Nx
 
 CFontManager::FontEntry 				CFontManager::s_font_tab[vMAX_FONT_ENTRIES];
 Lst::HashTable<CFontManager::FontEntry>*	CFontManager::s_p_font_lookup = NULL;
-char									CFontManager::s_meta_button_map[NUM_META_BUTTON_ENTRIES];
-bool									CFontManager::s_meta_button_map_initialized = false;
+// PS2 / R36S default meta button mappings:
+// 0: Ollie (B / Cross) -> 3 ('3')
+// 1: Grind (X / Triangle) -> 0 ('0')
+// 2: Triangle -> 0 ('0')
+// 3: Flip (Y / Square) -> 1 ('1')
+// 4: Grab (A / Circle) -> 2 ('2')
+// 5: Grab -> 2 ('2')
+// 6: Flip -> 1 ('1')
+// 7: Flip -> 1 ('1')
+// 8: Grab -> 2 ('2')
+// 9: Flip -> 1 ('1')
+// 10: L1 -> 14 ('e')
+// 11: R1 -> 15 ('f')
+// 12: Triangle -> 0 ('0')
+// 13: Square -> 1 ('1')
+// 14: Circle -> 2 ('2')
+// 15: L2 -> 16 ('g')
+// 16: R2 -> 17 ('h')
+// 17: Circle -> 2 ('2')
+// 18: Square -> 1 ('1')
+// 19: R2 -> 17 ('h')
+// 20: R2 -> 17 ('h')
+// 21: R2 -> 17 ('h')
+// 22: L1+R1 -> 18 ('i')
+// 23: L2 -> 16 ('g')
+// 24: L2 -> 16 ('g')
+// 25: L2 -> 16 ('g')
+char									CFontManager::s_meta_button_map[NUM_META_BUTTON_ENTRIES] = {
+	'3', '0', '0', '1', '2', '2', '1', '1',
+	'2', '1', 'e', 'f', '0', '1', '2', 'g',
+	'h', '2', '1', 'h', 'h', 'h', 'i', 'g',
+	'g', 'g', '0', '0', '0', '0', '0', '0'
+};
+bool									CFontManager::s_meta_button_map_initialized = true;
 
 Lst::HashTable<CFontManager::FontEntry>& CFontManager::GetFontLookup()
 {
@@ -134,8 +166,10 @@ const char *CFontManager::sTestFontLoaded(uint32 checksum)
 
 char CFontManager::sMapMetaCharacterToButton(const char *pMetaChar)
 {
-	Dbg_MsgAssert(s_meta_button_map_initialized, ("meta button character table not initialized"));
-	return s_meta_button_map[Str::DehexifyDigit(pMetaChar)];
+	int digit = Str::DehexifyDigit(pMetaChar);
+	if (digit < 0 || digit >= NUM_META_BUTTON_ENTRIES)
+		return '0';
+	return s_meta_button_map[digit];
 }
 
 

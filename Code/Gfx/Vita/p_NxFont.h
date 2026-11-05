@@ -70,6 +70,7 @@ public:
 
 private:
 	virtual bool	plat_load( const char *filename );
+	bool		plat_load_memory( const unsigned char *p_mem, size_t mem_size, const char *filename );
 	virtual void	plat_set_spacings( int charSpacing, int spaceSpacing );
 	virtual void	plat_unload();
 	virtual uint32	plat_get_default_height() const	{ return m_default_height; }

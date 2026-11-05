@@ -234,20 +234,12 @@ void CTrickComponent::Clear()
 Script::CStruct *CTrickComponent::get_trigger_structure(Script::CStruct *p_struct)
 {
 	Script::CStruct *p_trigger=NULL;
-#ifdef __PLAT_VITA__
-	// VITA : chemin XBox, comme le reste (HARDWARE_XBOX). De la v1.0 a la
-	// v1.1 on le court-circuitait pour prendre le Trigger PS2 L1+R1 de la
-	// descente de planche (le bouton Noir n'existait pas). Depuis que la
-	// manette Vita reprend la disposition Xbox (Sys/SIO/Vita/p_siodev.cpp :
-	// L = L1+L2, R = R1+R2, SELECT = Blanc, SELECT+R = Noir), le Xbox_Trigger
-	// est le bon : L1+R1 viendrait avec L+R en l'air, le spine transfer, et
-	// ferait descendre de la planche. Un seul Xbox_Trigger dans tout le jeu
-	// (switch_control.q:5). Disposition DualShock (manette a quatre
-	// gachettes) : Trigger de la PS2, descente sur L1+R1.
+#if defined(__PLAT_LINUX__)
+	// Linux / R36S: ALWAYS use standard PS2 triggers (Trigger = PressTwo, L1, R1 to get off board).
+	// Never use XBox_Trigger (Xbox White button).
+	p_struct->GetStructure(CRCD(0xe594f0a2,"Trigger"),&p_trigger,Script::ASSERT);
+#elif defined(__PLAT_VITA__)
 	if ((Config::GetHardware()==Config::HARDWARE_XBOX) && !::SIO::g_vita_manette_ds)
-#else
-	if (Config::GetHardware()==Config::HARDWARE_XBOX)
-#endif
 	{
 		if (!p_struct->GetStructure(CRCD(0xce42ee1a,"XBox_Trigger"),&p_trigger))
 		{
@@ -265,6 +257,26 @@ Script::CStruct *CTrickComponent::get_trigger_structure(Script::CStruct *p_struc
 	{
 		p_struct->GetStructure(CRCD(0xe594f0a2,"Trigger"),&p_trigger,Script::ASSERT);
 	}
+#else
+	if (Config::GetHardware()==Config::HARDWARE_XBOX)
+	{
+		if (!p_struct->GetStructure(CRCD(0xce42ee1a,"XBox_Trigger"),&p_trigger))
+		{
+			p_struct->GetStructure(CRCD(0xe594f0a2,"Trigger"),&p_trigger,Script::ASSERT);
+		}
+	}
+	else if (Config::GetHardware()==Config::HARDWARE_NGC)
+	{
+		if (!p_struct->GetStructure(CRCD(0xcb0e600c,"NGC_Trigger"),&p_trigger))
+		{
+			p_struct->GetStructure(CRCD(0xe594f0a2,"Trigger"),&p_trigger,Script::ASSERT);
+		}
+	}
+	else
+	{
+		p_struct->GetStructure(CRCD(0xe594f0a2,"Trigger"),&p_trigger,Script::ASSERT);
+	}
+#endif
 	
 	return p_trigger;
 }

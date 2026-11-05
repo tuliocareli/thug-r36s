@@ -20,6 +20,7 @@
 
 #include "vita_log.h"
 #include "p_NxFont.h"
+#include "buttons_r36s_fnt.h"
 #include <gfx/NxFontMan.h>
 
 #define SCREEN_W	960.0f
@@ -171,8 +172,13 @@ static const STexteVita *motif_suivant( const char *p, const char **pp_pos )
 	const char *p_best_pos = NULL;
 	for( int i = 0; i < NUM_TEXTES_VITA; ++i )
 	{
+#ifdef __PLAT_LINUX__
+		if( s_textes_vita[i].condition == 1 )
+			continue;
+#else
 		if( s_textes_vita[i].condition == 1 && ::SIO::g_vita_manette_ds )
 			continue;
+#endif
 		if( s_textes_vita[i].condition == 2 && !::SIO::g_vita_manette_ds )
 			continue;
 		const char *q = strstr( p, s_textes_vita[i].p_avant );
@@ -426,8 +432,139 @@ const SVitaGlyph *CVitaFont::GetSpecialGlyph( int index ) const
 }
 
 
+bool CVitaFont::plat_load_memory( const unsigned char *p_mem, size_t mem_size, const char *filename )
+{
+	if( !p_mem || mem_size < 16 )
+		return false;
+
+	const unsigned char *p_cur = p_mem;
+	const unsigned char *p_end = p_mem + mem_size;
+
+	const unsigned char *hdr = p_cur;
+	p_cur += 16;
+
+	int num_chars    = *(const int *)( hdr + 4 );
+	m_default_height = *(const int *)( hdr + 8 );
+	m_default_base   = *(const int *)( hdr + 12 );
+
+	if(( num_chars <= 0 ) || ( num_chars > 4096 ))
+		return false;
+
+	mp_glyphs = (SVitaGlyph *)calloc( num_chars, sizeof( SVitaGlyph ));
+	if( !mp_glyphs )
+		return false;
+	m_num_glyphs = num_chars;
+
+	if( p_cur + num_chars * 4 > p_end )
+	{
+		free( mp_glyphs ); mp_glyphs = NULL;
+		return false;
+	}
+	const unsigned char *p_tab = p_cur;
+	p_cur += num_chars * 4;
+
+	for( int i = 0; i < num_chars; ++i )
+	{
+		mp_glyphs[i].baseline = *(const unsigned short *)( p_tab + i * 4 );
+		short ascii           = *(const short *)( p_tab + i * 4 + 2 );
+		if( ascii >= 0 )
+			m_map[(unsigned char)ascii] = (unsigned char)i;
+		else if( ascii >= -32 )
+			m_special_map[(unsigned char)( -ascii - 1 )] = (unsigned char)i;
+	}
+
+	if( p_cur + 16 > p_end )
+	{
+		free( mp_glyphs ); mp_glyphs = NULL;
+		return false;
+	}
+	const unsigned char *thdr = p_cur;
+	p_cur += 16;
+	int tw    = *(const unsigned short *)( thdr + 4 );
+	int th    = *(const unsigned short *)( thdr + 6 );
+	int depth = *(const unsigned short *)( thdr + 8 );
+
+	if(( tw <= 0 ) || ( th <= 0 ) || ( tw > 2048 ) || ( th > 2048 ) || ( depth != 8 ))
+	{
+		free( mp_glyphs ); mp_glyphs = NULL;
+		return false;
+	}
+
+	int num_bytes = ( tw * th + 3 ) & ~3;
+	if( p_cur + num_bytes + 1024 > p_end )
+	{
+		free( mp_glyphs ); mp_glyphs = NULL;
+		return false;
+	}
+	const unsigned char *p_idx = p_cur; p_cur += num_bytes;
+	const unsigned char *clut  = p_cur; p_cur += 1024;
+
+	unsigned char *p_rgba = (unsigned char *)malloc( tw * th * 4 );
+	if( !p_rgba )
+	{
+		free( mp_glyphs ); mp_glyphs = NULL;
+		return false;
+	}
+	for( int i = 0; i < tw * th; ++i )
+	{
+		const unsigned char *p_c = clut + p_idx[i] * 4;
+		unsigned int a = p_c[3];
+		a = ( a >= 0x80 ) ? 0xFF : ( a * 2 );
+		p_rgba[i * 4 + 0] = p_c[0];
+		p_rgba[i * 4 + 1] = p_c[1];
+		p_rgba[i * 4 + 2] = p_c[2];
+		p_rgba[i * 4 + 3] = (unsigned char)a;
+	}
+
+	glGenTextures( 1, &m_texture );
+	glBindTexture( GL_TEXTURE_2D, m_texture );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0,
+	              GL_RGBA, GL_UNSIGNED_BYTE, p_rgba );
+	glBindTexture( GL_TEXTURE_2D, 0 );
+	free( p_rgba );
+
+	m_hd_k = 0;
+
+	if( p_cur + num_chars * 8 + 4 <= p_end )
+	{
+		const unsigned char *p_sub = p_cur;
+		p_cur += num_chars * 8 + 4;
+		for( int i = 0; i < num_chars; ++i )
+		{
+			const unsigned short *p = (const unsigned short *)( p_sub + 4 + i * 8 );
+			int x = p[0], y = p[1], w = p[2], h = p[3];
+			mp_glyphs[i].w  = w;
+			mp_glyphs[i].h  = h;
+			mp_glyphs[i].u0 = ( (float)x + 0.5f ) / (float)tw;
+			mp_glyphs[i].v0 = ( (float)y + 0.5f ) / (float)th;
+			mp_glyphs[i].u1 = ( (float)( x + w ) - 0.5f ) / (float)tw;
+			mp_glyphs[i].v1 = ( (float)( y + h ) - 0.5f ) / (float)th;
+			mp_glyphs[i].hu0 = mp_glyphs[i].u0;
+			mp_glyphs[i].hv0 = mp_glyphs[i].v0;
+			mp_glyphs[i].hu1 = mp_glyphs[i].u1;
+			mp_glyphs[i].hv1 = mp_glyphs[i].v1;
+		}
+	}
+
+	const SVitaGlyph *p_i = GetGlyph( 'I' );
+	if( p_i && p_i->w )
+		m_space_spacing = p_i->w;
+
+	VLOG( "FNT", "Police '%s' chargee depuis la memoire embarquee (%d glyphes, %dx%d)",
+	      filename, num_chars, tw, th );
+	return true;
+}
+
 bool CVitaFont::plat_load( const char *filename )
 {
+#ifdef __PLAT_LINUX__
+	if( strcmp( filename, "ButtonsPs2" ) == 0 )
+	{
+		return plat_load_memory( s_buttons_r36s_fnt, s_buttons_r36s_fnt_size, filename );
+	}
+#endif
 	char path[256];
 	snprintf( path, sizeof( path ), "fonts/%s.fnt.xbx", filename );
 

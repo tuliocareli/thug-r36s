@@ -388,7 +388,11 @@ static void reglages_appliquer( const char *p_cle, int v )
 	else if( strcmp( p_cle, "invert_left_y" ) == 0 )		s_inv_ly = ( v != 0 );
 	else if( strcmp( p_cle, "invert_right_x" ) == 0 )		s_inv_rx = ( v != 0 );
 	else if( strcmp( p_cle, "invert_right_y" ) == 0 )		s_inv_ry = ( v != 0 );
+#ifndef __PLAT_LINUX__
 	else if( strcmp( p_cle, "dualshock_layout" ) == 0 )		g_vita_manette_ds = ( v != 0 );
+#else
+	else if( strcmp( p_cle, "dualshock_layout" ) == 0 )		g_vita_manette_ds = 1;
+#endif
 	else if(( strcmp( p_cle, "button_glyphs" ) == 0 ) || ( strcmp( p_cle, "r36s_buttons" ) == 0 )) g_r36s_buttons = ( v != 0 );
 	// Cles des versions 1.0-1.1 (disposition tactile), sans objet depuis la
 	// disposition Xbox : ignorees sans bruit, le fichier est reecrit sans elles
@@ -2897,8 +2901,13 @@ void Device::read_data( void )
 	bool       l2 = ( pad.buttons & SCE_CTRL_L2 ) != 0, r2 = ( pad.buttons & SCE_CTRL_R2 ) != 0;
 	const bool pg = l1 || l2, pd = r1 || r2;		// disposition Vita : une gachette
 	const bool sel = ( pad.buttons & SCE_CTRL_SELECT ) != 0;
+#ifdef __PLAT_LINUX__
+	const bool noir  = false;
+	const bool blanc = false;
+#else
 	const bool noir  = !g_vita_manette_ds && sel && pd;
 	const bool blanc = !g_vita_manette_ds && sel && !pd;
+#endif
 	if( g_vita_manette_ds )
 		pave_arriere( &l2, &r2 );
 	if( pad.buttons & SCE_CTRL_START )		b2 &= ~( 1 << 3 );
