@@ -335,8 +335,26 @@ const SVitaGlyph *CVitaFont::ParseTag( const char **pp, CVitaFont **pp_font ) co
 				const bool meta = ( *q == 'm' ) || ( *q == 'M' );
 				++q;
 				char d = meta ? Nx::CFontManager::sMapMetaCharacterToButton( q ) : *q;
-				const int n = dehex( d );
-				if( sp_buttons_font )
+				int n = -1;
+#ifdef __PLAT_LINUX__
+				if( d == 'm' || d == 'M' )
+				{
+					// \bm: Menu Accept -> Botao B (Glyph 3) no R36S
+					n = 3;
+				}
+				else if( d == 'n' || d == 'N' )
+				{
+					// \bn: Menu Back -> Botao A (Glyph 2) no R36S
+					n = 2;
+				}
+				else
+				{
+					n = dehex( d );
+				}
+#else
+				n = dehex( d );
+#endif
+				if( sp_buttons_font && n >= 0 )
 				{
 					*pp_font = sp_buttons_font;
 					g = sp_buttons_font->GetSpecialGlyph( n );
@@ -367,7 +385,7 @@ CVitaFont::CVitaFont()
 	  m_char_spacing( 0 ), m_space_spacing( 8 )
 {
 	memset( m_map, 0, sizeof( m_map ));
-	memset( m_special_map, 0, sizeof( m_special_map ));
+	memset( m_special_map, 0xFF, sizeof( m_special_map ));
 	for( int i = 0; i < 16; ++i )
 		m_rgba_tab[i] = Image::RGBA( 128, 128, 128, 128 );
 }
@@ -425,8 +443,8 @@ const SVitaGlyph *CVitaFont::GetSpecialGlyph( int index ) const
 {
 	if( !mp_glyphs || ( index < 0 ) || ( index >= 32 ))
 		return NULL;
-	int i = m_special_map[index];
-	if(( i < 0 ) || ( i >= m_num_glyphs ))
+	unsigned char i = m_special_map[index];
+	if( i == 0xFF || (int)i >= m_num_glyphs )
 		return NULL;
 	return &mp_glyphs[i];
 }
@@ -463,6 +481,7 @@ bool CVitaFont::plat_load_memory( const unsigned char *p_mem, size_t mem_size, c
 	const unsigned char *p_tab = p_cur;
 	p_cur += num_chars * 4;
 
+	memset( m_special_map, 0xFF, sizeof( m_special_map ) );
 	for( int i = 0; i < num_chars; ++i )
 	{
 		mp_glyphs[i].baseline = *(const unsigned short *)( p_tab + i * 4 );
