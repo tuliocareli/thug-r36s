@@ -335,22 +335,7 @@ const SVitaGlyph *CVitaFont::ParseTag( const char **pp, CVitaFont **pp_font ) co
 					*pp_font = sp_buttons_font;
 					g = sp_buttons_font->GetSpecialGlyph( n );
 				}
-				if( ::SIO::g_r36s_buttons && sp_buttons_lr && ( n >= 0 && n <= 3 ))
-				{
-					// Disposition R36S (boutons Nintendo ABXY) :
-					// n=0 (Grind / Cima / Triangulo)    -> X (ButtonsXbox 1)
-					// n=1 (Flip / Esquerda / Quadrado) -> Y (ButtonsXbox 0)
-					// n=2 (Grab / Direita / Circulo)   -> A (ButtonsXbox 3)
-					// n=3 (Ollie / Bas / Cruz)         -> B (ButtonsXbox 2)
-					static const int s_r36s_map[4] = { 1, 0, 3, 2 };
-					const SVitaGlyph *g_r36s = sp_buttons_lr->GetSpecialGlyph( s_r36s_map[n] );
-					if( g_r36s )
-					{
-						*pp_font = sp_buttons_lr;
-						g = g_r36s;
-					}
-				}
-				else if( !::SIO::g_vita_manette_ds && sp_buttons_lr && (( n == 14 ) || ( n == 15 ) || ( n == 18 )))
+				if( !::SIO::g_vita_manette_ds && sp_buttons_lr && (( n == 14 ) || ( n == 15 ) || ( n == 18 )))
 				{
 					const SVitaGlyph *g_lr = sp_buttons_lr->GetSpecialGlyph( n );
 					if( g_lr )
